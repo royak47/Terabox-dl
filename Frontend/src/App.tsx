@@ -8,6 +8,7 @@ import HistorySection from './components/HistorySection';
 import { TeraboxFile } from './types/terabox';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import AdsBlockMessage from './components/ads';
 
 // Load API base URL: local proxy in dev or real worker URL in production
 const WORKER_URL = import.meta.env.VITE_WORKER_URL;
@@ -135,6 +136,7 @@ function App() {
         </main>
         <Toaster />
       </div>
+      <AdsBlockMessage />
     </ThemeProvider>
   );
 }
