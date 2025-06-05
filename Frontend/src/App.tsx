@@ -127,9 +127,9 @@ function App() {
                 <HistorySection onSelectFile={setCurrentFile} />
               </div>
             </div>
-            <a href='https://github.com/0xarchit/Terabox-Downloader' target='_blank' rel='noopener noreferrer' className="w-full">
+            <a href='https://github.com/Mittyadav/Terabox-dl' target='_blank' rel='noopener noreferrer' className="w-full">
               <div className="fixed bottom-2 left-1/2 -translate-x-1/2 px-4 text-xs text-foreground/50 break-words text-center">
-                Developed by DARK LIFE 🧬• Source: github.com/Mittyadav/Terabox-Downloader
+                Developed by DARK LIFE 🧬• Source: github.com/Mittyadav/Terabox-dl
               </div>
             </a>
           </motion.div>
