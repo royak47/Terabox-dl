@@ -5,4 +5,9 @@ account_id = "7b1941565134f41ad0bbce0432e22234"
 workers_dev = true
 compatibility_date = "2025-06-05"
 
-main = "worker.js"  # ya jahan tumhara main JS file ho
+main = "worker.js"  # ✅ yahi important hai
+
+[build]
+command = "npm run build"
+upload.format = "modules"
+upload.dir = "dist"
