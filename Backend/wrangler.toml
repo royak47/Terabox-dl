@@ -1,7 +1,0 @@
-name = "terabox-link-downloader"
-type = "javascript"
-
-account_id = "7b1941565134f41ad0bbce0432e22234"
-workers_dev = true
-compatibility_date = "2025-06-05"
-main = "worker.js"
