@@ -6,6 +6,8 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getMimeType } from '@/lib/getMimeType';
 
+import { VideoPlayer } from '@/components/VideoPlayer'; // New custom component
+
 interface FilePreviewProps {
   file: TeraboxFile;
 }
@@ -28,10 +30,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
     setPreviewError(false);
   }, [file]);
 
-  const handleLoad = () => {
-    setLoading(false);
-  };
-
+  const handleLoad = () => setLoading(false);
   const handleError = () => {
     setLoading(false);
     setPreviewError(true);
@@ -41,7 +40,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
     <div className="preview-container">
       {canPreview ? (
         <div className="relative">
-          <AspectRatio ratio={16 / 9} className="bg-muted/30 rounded-xl overflow-hidden">
+          <AspectRatio ratio={16 / 9} className="bg-muted/30 max-h-[80vh]">
             <AnimatePresence>
               {loading && (
                 <motion.div
@@ -57,21 +56,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
             {!previewError ? (
               <>
                 {isVideo && (
-                  <video
-                    src={file.proxy_url}
-                    poster={file.thumbnail}
-                    controls
-                    preload="metadata"
-                    controlsList="nodownload"
-                    className="w-full max-h-[700px] md:max-h-[80vh] object-contain rounded-xl"
-                    onLoadedData={handleLoad}
-                    onError={handleError}
-                    crossOrigin="anonymous"
-                    playsInline
-                  >
-                    <source src={file.proxy_url} type={mimeType} />
-                    Your browser does not support the video tag.
-                  </video>
+                  <VideoPlayer src={file.proxy_url} poster={file.thumbnail} />
                 )}
 
                 {isAudio && (
@@ -100,7 +85,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
                   <img
                     src={file.proxy_url}
                     alt={file.file_name}
-                    className="w-full h-full object-contain rounded-xl"
+                    className="w-full h-full object-contain"
                     onLoad={handleLoad}
                     onError={handleError}
                   />
@@ -110,7 +95,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
                   <iframe
                     src={file.proxy_url}
                     title="PDF Preview"
-                    className="w-full h-full border-0 rounded-xl"
+                    className="w-full h-full border-0"
                     onLoad={handleLoad}
                     onError={handleError}
                   />
@@ -125,14 +110,14 @@ export default function FilePreview({ file }: FilePreviewProps) {
           </AspectRatio>
         </div>
       ) : (
-        <div className="flex items-center justify-center py-12 bg-muted/10 rounded-xl">
+        <div className="flex items-center justify-center py-12 bg-muted/10">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
             className="flex flex-col items-center"
           >
-            {fileExtension === 'zip' || fileExtension === 'rar' ? (
+            {(fileExtension === 'zip' || fileExtension === 'rar') ? (
               <File className="w-16 h-16 text-muted-foreground" />
             ) : fileExtension.match(/doc|docx|txt|pdf/) ? (
               <FileBadge className="w-16 h-16 text-muted-foreground" />
