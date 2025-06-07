@@ -10,81 +10,81 @@ import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdsBlockMessage from './components/ads.tsx';
 
-// Load API base URL: local proxy in dev or real worker URL in production
 const WORKER_URL = import.meta.env.VITE_WORKER_URL;
 
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: { 
+  visible: {
     opacity: 1,
-    transition: { 
-      staggerChildren: 0.1 
-    }
-  }
+    transition: { staggerChildren: 0.1 },
+  },
 };
 
 function App() {
   const [currentFile, setCurrentFile] = useState<TeraboxFile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  // session-only cache for file details to avoid re-fetching same link
   const sessionCache = useRef<Record<string, TeraboxFile>>({});
   const { toast } = useToast();
 
   const handleFetchFile = async (link: string) => {
-    // return cached file for this session if available
     if (sessionCache.current[link]) {
       setCurrentFile(sessionCache.current[link]);
       toast({
-        title: "Loaded from cache",
-        description: "Using cached file details for this session.",
+        title: 'Loaded from cache',
+        description: 'Using cached file details for this session.',
       });
       return;
     }
+
     setIsLoading(true);
     try {
-      // Choose endpoint: dev uses Vite proxy, prod uses Cloudflare Worker URL
-      const apiBase = import.meta.env.MODE === 'development' ? '/api' : WORKER_URL;
+      const apiBase =
+        import.meta.env.MODE === 'development' ? '/api' : WORKER_URL;
       const response = await fetch(apiBase, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ link }),
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || `HTTP error! status: ${response.status}`);
+        throw new Error(
+          errorText || `HTTP error! status: ${response.status}`
+        );
       }
-      
+
       const data = await response.json();
-      // enrich response with original link and timestamp
       const fetchedAt = new Date().toISOString();
       const fileWithSource = { ...data, sourceLink: link, fetchedAt };
-      // set current file including sourceLink and fetchedAt
+
       setCurrentFile(fileWithSource);
-      // store in session cache
       sessionCache.current[link] = fileWithSource;
-      // Add to history in localStorage
-      const history = JSON.parse(localStorage.getItem('terabox-history') || '[]');
+
+      const history =
+        JSON.parse(localStorage.getItem('terabox-history') || '[]') || [];
+
       const newHistory = [
         fileWithSource,
-        ...history.filter((item: TeraboxFile) => item.file_name !== data.file_name),
-      ].slice(0, 10); // Keep only 10 most recent
+        ...history.filter(
+          (item: TeraboxFile) => item.file_name !== data.file_name
+        ),
+      ].slice(0, 10);
+
       localStorage.setItem('terabox-history', JSON.stringify(newHistory));
-      
+
       toast({
-        title: "Success!",
-        description: "File details successfully fetched.",
+        title: 'Success!',
+        description: 'File details successfully fetched.',
       });
     } catch (error) {
       console.error('Error fetching file:', error);
       toast({
-        title: "Error",
-        description: error instanceof Error 
-          ? error.message 
-          : "Failed to fetch file details. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to fetch file details. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -93,43 +93,46 @@ function App() {
 
   return (
     <ThemeProvider defaultTheme="dark" storageKey="terabox-theme">
-      <div className="min-h-screen flex flex-col bg-background text-foreground overflow-x-hidden overflow-y-auto">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#1f1f1f] to-[#2c2c2c] text-white overflow-x-hidden overflow-y-auto font-sans">
         <Navbar />
-        <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
+        <main className="container mx-auto px-4 md:px-6 py-6 md:py-10">
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="max-w-4xl mx-auto space-y-6 md:space-y-8"
+            className="max-w-3xl mx-auto space-y-8"
           >
-            <div className="bg-card/50 backdrop-blur-sm rounded-xl shadow-lg border border-border/50">
-              <div className="p-4 md:p-6 lg:p-8">
-                <TeraboxForm onSubmit={handleFetchFile} isLoading={isLoading} />
-                
-                <AnimatePresence mode="wait">
-                  {currentFile && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3 }}
-                      className="mt-6 md:mt-8"
-                    >
-                      <FileDetails file={currentFile} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+            <div className="bg-black/20 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl p-6 md:p-8">
+              <TeraboxForm onSubmit={handleFetchFile} isLoading={isLoading} />
+
+              <AnimatePresence mode="wait">
+                {currentFile && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="mt-6 md:mt-8"
+                  >
+                    <FileDetails file={currentFile} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-                <div id="container-81b555327b1ab8a56437c782db53ba33"></div>            
-            <div className="bg-card/50 backdrop-blur-sm rounded-xl shadow-lg border border-border/50">
-              <div className="p-4 md:p-6 lg:p-8">
-                <HistorySection onSelectFile={setCurrentFile} />
-              </div>
+
+            <div id="container-ads" className="text-center text-sm text-white/40"></div>
+
+            <div className="bg-black/20 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl p-6 md:p-8">
+              <HistorySection onSelectFile={setCurrentFile} />
             </div>
-            <a href='https://github.com/Mittyadav/Terabox-dl' target='_blank' rel='noopener noreferrer' className="w-full">
-              <div className="fixed bottom-2 left-1/2 -translate-x-1/2 px-4 text-xs text-foreground/50 break-words text-center">
-                Developed by DARK LIFE 🧬• Source: github.com/Mittyadav/Terabox-dl
+
+            <a
+              href="https://github.com/Mittyadav/Terabox-dl"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <div className="text-center text-xs text-white/40 pt-6">
+                Developed by DARK LIFE 🧬 • Source: github.com/Mittyadav/Terabox-dl
               </div>
             </a>
           </motion.div>
