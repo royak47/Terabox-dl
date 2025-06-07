@@ -9,6 +9,7 @@ import { TeraboxFile } from './types/terabox';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdsBlockMessage from './components/ads.tsx';
+import { Download, Clock } from 'lucide-react';
 
 const WORKER_URL = import.meta.env.VITE_WORKER_URL;
 
@@ -48,9 +49,7 @@ function App() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
-          errorText || `HTTP error! status: ${response.status}`
-        );
+        throw new Error(errorText || `HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
@@ -93,16 +92,21 @@ function App() {
 
   return (
     <ThemeProvider defaultTheme="dark" storageKey="terabox-theme">
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#1f1f1f] to-[#2c2c2c] text-white overflow-x-hidden overflow-y-auto font-sans">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-zinc-900 to-black text-white transition-colors duration-500 font-sans overflow-x-hidden">
         <Navbar />
         <main className="container mx-auto px-4 md:px-6 py-6 md:py-10">
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="max-w-3xl mx-auto space-y-8"
+            className="max-w-3xl mx-auto space-y-10"
           >
-            <div className="bg-black/20 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl p-6 md:p-8">
+            <section className="bg-white/5 dark:bg-black/30 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl p-6 md:p-8 transition-all duration-300">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-primary">
+                <Download className="w-5 h-5" />
+                Download Link Generator
+              </h2>
+
               <TeraboxForm onSubmit={handleFetchFile} isLoading={isLoading} />
 
               <AnimatePresence mode="wait">
@@ -112,29 +116,36 @@ function App() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
-                    className="mt-6 md:mt-8"
+                    className="mt-6"
                   >
                     <FileDetails file={currentFile} />
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </section>
 
-            <div id="container-ads" className="text-center text-sm text-white/40"></div>
+            <div id="container-ads" className="text-center text-sm text-white/40" />
 
-            <div className="bg-black/20 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl p-6 md:p-8">
+            <section className="bg-white/5 dark:bg-black/30 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl p-6 md:p-8 transition-all duration-300">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-primary">
+                <Clock className="w-5 h-5" />
+                Download History
+              </h2>
+
               <HistorySection onSelectFile={setCurrentFile} />
-            </div>
+            </section>
 
-            <a
-              href="https://github.com/Mittyadav/Terabox-dl"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <div className="text-center text-xs text-white/40 pt-6">
-                Developed by DARK LIFE 🧬 • Source: github.com/Mittyadav/Terabox-dl
-              </div>
-            </a>
+            <footer className="text-center text-xs text-muted-foreground pt-6 pb-2">
+              Developed by <span className="font-medium">DARK LIFE 🧬</span> •{' '}
+              <a
+                href="https://github.com/Mittyadav/Terabox-dl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-primary"
+              >
+                Source Code
+              </a>
+            </footer>
           </motion.div>
         </main>
         <Toaster />
