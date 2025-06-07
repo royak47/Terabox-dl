@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Database, Moon, Sun, Info } from 'lucide-react';
@@ -40,8 +39,10 @@ export default function Navbar() {
       transition={{ duration: 0.5 }}
     >
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+
+        {/* Logo & Title with border box */}
         <motion.div
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 border border-muted p-3 rounded-xl shadow-sm bg-muted/30 backdrop-blur"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
@@ -50,7 +51,8 @@ export default function Navbar() {
           <span className="font-bold text-xl">Terabox Downloader</span>
         </motion.div>
 
-        <div className="flex items-center gap-2">
+        {/* Right side controls (Theme toggle & Info) */}
+        <div className="flex items-center gap-2 border border-muted p-3 rounded-xl shadow-sm bg-muted/30 backdrop-blur">
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -64,15 +66,16 @@ export default function Navbar() {
                 currentTheme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'
               }
               className="h-12 w-12 min-h-[48px] min-w-[48px] flex items-center justify-center"
-              style={{ minWidth: '32px', minHeight: '32px' }} // Fallback inline styles
+              style={{ minWidth: '32px', minHeight: '32px' }}
             >
               {currentTheme === 'light' ? (
-                <Moon className="h-8 w-8 text-foreground" /> // Increased icon size (32px)
+                <Moon className="h-8 w-8 text-foreground" />
               ) : (
-                <Sun className="h-8 w-8 text-foreground" /> // Increased icon size (32px)
+                <Sun className="h-8 w-8 text-foreground" />
               )}
             </Button>
           </motion.div>
+
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -95,7 +98,7 @@ export default function Navbar() {
                     This website generates fast download links that can be downloaded easily, but using a download manager like FDM or aria2c will increase download speed by 3-4 times.
                   </p>
                   <p className="text-sm">
-                    Please wait; files may take 1-2 minutes to load depending on your network speed.
+                    Please wait; files may take 1–2 minutes to load depending on your network speed.
                   </p>
                 </div>
               </PopoverContent>
