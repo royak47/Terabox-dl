@@ -5,8 +5,7 @@ import { TeraboxFile } from '@/types/terabox';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getMimeType } from '@/lib/getMimeType';
-
-import { VideoPlayer } from '@/components/VideoPlayer'; // New custom component
+import { VideoPlayer } from './VideoPlayer'; // ✅ Import custom video player
 
 interface FilePreviewProps {
   file: TeraboxFile;
@@ -30,7 +29,10 @@ export default function FilePreview({ file }: FilePreviewProps) {
     setPreviewError(false);
   }, [file]);
 
-  const handleLoad = () => setLoading(false);
+  const handleLoad = () => {
+    setLoading(false);
+  };
+
   const handleError = () => {
     setLoading(false);
     setPreviewError(true);
@@ -40,7 +42,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
     <div className="preview-container">
       {canPreview ? (
         <div className="relative">
-          <AspectRatio ratio={16 / 9} className="bg-muted/30 max-h-[80vh]">
+          <AspectRatio ratio={16 / 9} className="bg-muted/30">
             <AnimatePresence>
               {loading && (
                 <motion.div
@@ -56,7 +58,10 @@ export default function FilePreview({ file }: FilePreviewProps) {
             {!previewError ? (
               <>
                 {isVideo && (
-                  <VideoPlayer src={file.proxy_url} poster={file.thumbnail} />
+                  <VideoPlayer
+                    src={file.proxy_url}
+                    poster={file.thumbnail}
+                  />
                 )}
 
                 {isAudio && (
@@ -114,10 +119,10 @@ export default function FilePreview({ file }: FilePreviewProps) {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
             className="flex flex-col items-center"
           >
-            {(fileExtension === 'zip' || fileExtension === 'rar') ? (
+            {fileExtension === 'zip' || fileExtension === 'rar' ? (
               <File className="w-16 h-16 text-muted-foreground" />
             ) : fileExtension.match(/doc|docx|txt|pdf/) ? (
               <FileBadge className="w-16 h-16 text-muted-foreground" />
