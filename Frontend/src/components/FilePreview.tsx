@@ -5,7 +5,7 @@ import { TeraboxFile } from '@/types/terabox';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getMimeType } from '@/lib/getMimeType';
-import { VideoPlayer } from './VideoPlayer'; // ✅ Custom video player component
+import { VideoPlayer } from './VideoPlayer';
 
 interface FilePreviewProps {
   file: TeraboxFile;
@@ -36,16 +36,16 @@ export default function FilePreview({ file }: FilePreviewProps) {
   };
 
   return (
-    <div className="preview-container">
+    <div className="preview-container px-4 py-6">
       {canPreview ? (
-        <div className="relative max-w-5xl mx-auto">
-          <AspectRatio ratio={16 / 9} className="bg-muted/30 rounded-lg overflow-hidden">
+        <div className="relative mx-auto w-full max-w-5xl">
+          <AspectRatio ratio={16 / 9} className="bg-muted/30 rounded-lg overflow-hidden shadow-lg">
             <AnimatePresence>
               {loading && (
                 <motion.div
                   initial={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 flex items-center justify-center bg-muted/20"
+                  className="absolute inset-0 flex items-center justify-center bg-muted/20 z-10"
                 >
                   <Skeleton className="w-full h-full" />
                 </motion.div>
@@ -68,7 +68,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.3 }}
-                        className="bg-card rounded-lg p-6"
+                        className="bg-card rounded-lg p-6 shadow"
                       >
                         <FileAudio className="w-12 h-12 mx-auto mb-4 text-primary" />
                         <audio
