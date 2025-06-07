@@ -5,7 +5,7 @@ import { TeraboxFile } from '@/types/terabox';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getMimeType } from '@/lib/getMimeType';
-import { VideoPlayer } from './VideoPlayer'; // ✅ Import custom video player
+import { VideoPlayer } from './VideoPlayer'; // ✅ Custom video player component
 
 interface FilePreviewProps {
   file: TeraboxFile;
@@ -29,10 +29,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
     setPreviewError(false);
   }, [file]);
 
-  const handleLoad = () => {
-    setLoading(false);
-  };
-
+  const handleLoad = () => setLoading(false);
   const handleError = () => {
     setLoading(false);
     setPreviewError(true);
@@ -41,8 +38,8 @@ export default function FilePreview({ file }: FilePreviewProps) {
   return (
     <div className="preview-container">
       {canPreview ? (
-        <div className="relative">
-          <AspectRatio ratio={16 / 9} className="bg-muted/30">
+        <div className="relative max-w-5xl mx-auto">
+          <AspectRatio ratio={16 / 9} className="bg-muted/30 rounded-lg overflow-hidden">
             <AnimatePresence>
               {loading && (
                 <motion.div
