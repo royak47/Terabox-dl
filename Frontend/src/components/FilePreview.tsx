@@ -5,7 +5,6 @@ import { TeraboxFile } from '@/types/terabox';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getMimeType } from '@/lib/getMimeType';
-import { VideoPlayer } from './VideoPlayer';
 
 interface FilePreviewProps {
   file: TeraboxFile;
@@ -38,14 +37,14 @@ export default function FilePreview({ file }: FilePreviewProps) {
   return (
     <div className="preview-container px-4 py-6">
       {canPreview ? (
-        <div className="relative mx-auto w-full max-w-5xl">
-          <AspectRatio ratio={16 / 9} className="bg-muted/30 rounded-lg overflow-hidden shadow-lg">
+        <div className="relative max-w-5xl mx-auto">
+          <AspectRatio ratio={16 / 9} className="bg-muted/20 rounded-lg overflow-hidden">
             <AnimatePresence>
               {loading && (
                 <motion.div
                   initial={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 flex items-center justify-center bg-muted/20 z-10"
+                  className="absolute inset-0 flex items-center justify-center bg-muted/30 z-10"
                 >
                   <Skeleton className="w-full h-full" />
                 </motion.div>
@@ -55,9 +54,17 @@ export default function FilePreview({ file }: FilePreviewProps) {
             {!previewError ? (
               <>
                 {isVideo && (
-                  <VideoPlayer
+                  <video
                     src={file.proxy_url}
                     poster={file.thumbnail}
+                    controls
+                    preload="metadata"
+                    controlsList="nodownload"
+                    className="w-full h-full object-contain"
+                    onLoadedData={handleLoad}
+                    onError={handleError}
+                    crossOrigin="anonymous"
+                    playsInline
                   />
                 )}
 
@@ -65,10 +72,10 @@ export default function FilePreview({ file }: FilePreviewProps) {
                   <div className="w-full h-full flex items-center justify-center bg-muted/20 p-4">
                     <div className="w-full max-w-md">
                       <motion.div
-                        initial={{ scale: 0.9, opacity: 0 }}
+                        initial={{ scale: 0.95, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.3 }}
-                        className="bg-card rounded-lg p-6 shadow"
+                        className="bg-card rounded-lg p-6 shadow-md"
                       >
                         <FileAudio className="w-12 h-12 mx-auto mb-4 text-primary" />
                         <audio
@@ -112,22 +119,22 @@ export default function FilePreview({ file }: FilePreviewProps) {
           </AspectRatio>
         </div>
       ) : (
-        <div className="flex items-center justify-center py-12 bg-muted/10">
+        <div className="flex items-center justify-center py-12 bg-muted/10 rounded-md">
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 260, damping: 20 }}
             className="flex flex-col items-center"
           >
-            {fileExtension === 'zip' || fileExtension === 'rar' ? (
+            {['zip', 'rar'].includes(fileExtension) ? (
               <File className="w-16 h-16 text-muted-foreground" />
-            ) : fileExtension.match(/doc|docx|txt|pdf/) ? (
+            ) : /doc|docx|txt|pdf/.test(fileExtension) ? (
               <FileBadge className="w-16 h-16 text-muted-foreground" />
             ) : (
               <File className="w-16 h-16 text-muted-foreground" />
             )}
             <p className="text-muted-foreground mt-4 max-w-md text-center text-sm">
-              Preview not available for {fileExtension.toUpperCase()} files. Use the download buttons below to access the file.
+              Preview not available for <strong>{fileExtension.toUpperCase()}</strong> files. Use the download button below to access the file.
             </p>
           </motion.div>
         </div>
