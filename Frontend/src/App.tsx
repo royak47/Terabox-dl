@@ -138,12 +138,12 @@ function App() {
             <footer className="text-center text-xs text-muted-foreground pt-6 pb-2">
               Developed by <span className="font-medium">DARK LIFE 🧬</span> •{' '}
               <a
-                href="https://github.com/Mittyadav/Terabox-dl"
+                href="https://t.me/scripthub0"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline hover:text-primary"
               >
-                Source Code
+                © CONTACT INFO
               </a>
             </footer>
           </motion.div>
