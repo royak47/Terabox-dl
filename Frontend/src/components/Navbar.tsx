@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Database, Moon, Sun, Info } from 'lucide-react';
+import { CloudDownload, Moon, Sun, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from './theme-provider';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
 export default function Navbar() {
-  const { theme, setTheme } = useTheme() || { theme: 'light', setTheme: () => {} }; // Fallback for theme context
+  const { theme, setTheme } = useTheme() || { theme: 'light', setTheme: () => {} };
+
   const systemPrefersDark =
     typeof window !== 'undefined' &&
     window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -24,35 +25,33 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Debugging log for theme and size verification
   useEffect(() => {
     console.log('Theme:', theme, 'Current Theme:', currentTheme, 'setTheme:', setTheme);
   }, [theme, currentTheme]);
 
   return (
     <motion.header
-      className={`sticky top-0 z-10 backdrop-blur-sm ${
-        scrolled ? 'bg-background/80 border-b shadow-sm' : 'bg-transparent'
-      } transition-all duration-200`}
+      className={`sticky top-0 z-10 backdrop-blur-sm transition-all duration-200 ${
+        scrolled ? 'bg-white/80 dark:bg-zinc-900/80 border-b shadow-sm' : 'bg-transparent'
+      }`}
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-
-        {/* Logo & Title with border box */}
+        {/* Logo and Title Box */}
         <motion.div
-          className="flex items-center gap-2 border border-muted p-3 rounded-xl shadow-sm bg-muted/30 backdrop-blur"
+          className="flex items-center gap-2 border border-muted p-3 rounded-xl shadow-sm bg-muted/30 dark:bg-muted/40 backdrop-blur"
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          <Database className="w-6 h-6 text-primary" />
+          <CloudDownload className="w-6 h-6 text-primary" />
           <span className="font-bold text-xl">Terabox Downloader</span>
         </motion.div>
 
-        {/* Right side controls (Theme toggle & Info) */}
-        <div className="flex items-center gap-2 border border-muted p-3 rounded-xl shadow-sm bg-muted/30 backdrop-blur">
+        {/* Theme Toggle and Info Box */}
+        <div className="flex items-center gap-2 border border-muted p-3 rounded-xl shadow-sm bg-muted/30 dark:bg-muted/40 backdrop-blur">
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -95,7 +94,9 @@ export default function Navbar() {
               <PopoverContent>
                 <div className="space-y-2">
                   <p className="text-sm">
-                    This website generates fast download links that can be downloaded easily, but using a download manager like FDM or aria2c will increase download speed by 3-4 times.
+                    This website generates fast download links that can be downloaded easily,
+                    but using a download manager like FDM or aria2c will increase download
+                    speed by 3–4 times.
                   </p>
                   <p className="text-sm">
                     Please wait; files may take 1–2 minutes to load depending on your network speed.
