@@ -13,44 +13,47 @@ interface FilePreviewProps {
 export default function FilePreview({ file }: FilePreviewProps) {
   const [loading, setLoading] = useState(true);
   const [previewError, setPreviewError] = useState(false);
-
+  
   const fileExtension = file.file_name.split('.').pop()?.toLowerCase() || '';
   const mimeType = file.mime_type || getMimeType(file.file_name);
-
+  
   const isVideo = ['mp4', 'webm', 'mov'].includes(fileExtension);
   const isAudio = ['mp3', 'wav', 'ogg'].includes(fileExtension);
   const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension);
   const isPdf = fileExtension === 'pdf';
   const canPreview = isVideo || isAudio || isImage || isPdf;
-
+  
   useEffect(() => {
     setLoading(true);
     setPreviewError(false);
   }, [file]);
-
-  const handleLoad = () => setLoading(false);
+  
+  const handleLoad = () => {
+    setLoading(false);
+  };
+  
   const handleError = () => {
     setLoading(false);
     setPreviewError(true);
   };
-
+  
   return (
-    <div className="preview-container px-4 py-6">
+    <div className="preview-container">
       {canPreview ? (
-        <div className="relative max-w-5xl mx-auto">
-          <AspectRatio ratio={16 / 9} className="bg-muted/20 rounded-lg overflow-hidden">
+        <div className="relative">
+          <AspectRatio ratio={16 / 9} className="bg-muted/30">
             <AnimatePresence>
               {loading && (
                 <motion.div
                   initial={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 flex items-center justify-center bg-muted/30 z-10"
+                  className="absolute inset-0 flex items-center justify-center bg-muted/20"
                 >
                   <Skeleton className="w-full h-full" />
                 </motion.div>
               )}
             </AnimatePresence>
-
+            
             {!previewError ? (
               <>
                 {isVideo && (
@@ -65,17 +68,20 @@ export default function FilePreview({ file }: FilePreviewProps) {
                     onError={handleError}
                     crossOrigin="anonymous"
                     playsInline
-                  />
+                  >
+                    <source src={file.proxy_url} type={mimeType} />
+                    Your browser does not support the video tag.
+                  </video>
                 )}
-
+                
                 {isAudio && (
                   <div className="w-full h-full flex items-center justify-center bg-muted/20 p-4">
                     <div className="w-full max-w-md">
-                      <motion.div
-                        initial={{ scale: 0.95, opacity: 0 }}
+                      <motion.div 
+                        initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.3 }}
-                        className="bg-card rounded-lg p-6 shadow-md"
+                        className="bg-card rounded-lg p-6"
                       >
                         <FileAudio className="w-12 h-12 mx-auto mb-4 text-primary" />
                         <audio
@@ -89,7 +95,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
                     </div>
                   </div>
                 )}
-
+                
                 {isImage && (
                   <img
                     src={file.proxy_url}
@@ -99,7 +105,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
                     onError={handleError}
                   />
                 )}
-
+                
                 {isPdf && (
                   <iframe
                     src={file.proxy_url}
@@ -119,22 +125,22 @@ export default function FilePreview({ file }: FilePreviewProps) {
           </AspectRatio>
         </div>
       ) : (
-        <div className="flex items-center justify-center py-12 bg-muted/10 rounded-md">
+        <div className="flex items-center justify-center py-12 bg-muted/10">
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
             className="flex flex-col items-center"
           >
-            {['zip', 'rar'].includes(fileExtension) ? (
+            {fileExtension === 'zip' || fileExtension === 'rar' ? (
               <File className="w-16 h-16 text-muted-foreground" />
-            ) : /doc|docx|txt|pdf/.test(fileExtension) ? (
+            ) : fileExtension.match(/doc|docx|txt|pdf/) ? (
               <FileBadge className="w-16 h-16 text-muted-foreground" />
             ) : (
               <File className="w-16 h-16 text-muted-foreground" />
             )}
             <p className="text-muted-foreground mt-4 max-w-md text-center text-sm">
-              Preview not available for <strong>{fileExtension.toUpperCase()}</strong> files. Use the download button below to access the file.
+              Preview not available for {fileExtension.toUpperCase()} files. Use the download buttons below to access the file.
             </p>
           </motion.div>
         </div>
