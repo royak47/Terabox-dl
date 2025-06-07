@@ -1,11 +1,26 @@
 import { useRef, useState, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize2 } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export function VideoPlayer({ src, poster }: { src: string; poster?: string }) {
+interface VideoPlayerProps {
+  src: string;
+  poster?: string;
+}
+
+export default function VideoPlayer({ src, poster }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const [showControls, setShowControls] = useState(true);
+
+  // Auto-hide controls after 3 seconds
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (showControls) {
+      timeout = setTimeout(() => setShowControls(false), 3000);
+    }
+    return () => clearTimeout(timeout);
+  }, [showControls]);
 
   const togglePlay = () => {
     const video = videoRef.current;
@@ -23,52 +38,61 @@ export function VideoPlayer({ src, poster }: { src: string; poster?: string }) {
     const video = videoRef.current;
     if (!video) return;
     video.muted = !video.muted;
-    setIsMuted(video.muted);
+    setMuted(video.muted);
   };
 
-  const toggleFullscreen = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (video.requestFullscreen) {
-      video.requestFullscreen();
-    } else if ((video as any).webkitEnterFullscreen) {
-      (video as any).webkitEnterFullscreen(); // iOS Safari
-    }
+  const handleInteraction = () => {
+    setShowControls(true);
   };
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video) setIsMuted(video.muted);
-  }, []);
 
   return (
-    <div className="relative w-full max-h-[80vh] rounded-xl overflow-hidden group">
+    <div
+      className="relative w-full aspect-video bg-black overflow-hidden"
+      onMouseMove={handleInteraction}
+      onTouchStart={handleInteraction}
+    >
       <video
         ref={videoRef}
         src={src}
         poster={poster}
         className="w-full h-full object-contain"
-        preload="metadata"
+        muted={muted}
         playsInline
         onClick={togglePlay}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
       />
-      <motion.div
-        className="absolute bottom-4 left-4 right-4 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 px-4 py-2 rounded-lg"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        <button onClick={togglePlay} className="text-white hover:text-gray-200">
-          {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
-        </button>
-        <button onClick={toggleMute} className="text-white hover:text-gray-200">
-          {isMuted ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
-        </button>
-        <button onClick={toggleFullscreen} className="text-white hover:text-gray-200">
-          <Maximize2 className="w-6 h-6" />
-        </button>
-      </motion.div>
+
+      {showControls && (
+        <motion.div
+          className="absolute inset-0 flex items-center justify-center bg-black/30"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <button
+            onClick={togglePlay}
+            className="p-3 bg-white/80 dark:bg-black/70 rounded-full mx-2"
+          >
+            {isPlaying ? (
+              <Pause className="w-6 h-6 text-black dark:text-white" />
+            ) : (
+              <Play className="w-6 h-6 text-black dark:text-white" />
+            )}
+          </button>
+
+          <button
+            onClick={toggleMute}
+            className="p-3 bg-white/80 dark:bg-black/70 rounded-full mx-2 absolute bottom-4 right-4"
+          >
+            {muted ? (
+              <VolumeX className="w-5 h-5 text-black dark:text-white" />
+            ) : (
+              <Volume2 className="w-5 h-5 text-black dark:text-white" />
+            )}
+          </button>
+        </motion.div>
+      )}
     </div>
   );
 }
