@@ -13,35 +13,35 @@ interface FilePreviewProps {
 export default function FilePreview({ file }: FilePreviewProps) {
   const [loading, setLoading] = useState(true);
   const [previewError, setPreviewError] = useState(false);
-  
+
   const fileExtension = file.file_name.split('.').pop()?.toLowerCase() || '';
   const mimeType = file.mime_type || getMimeType(file.file_name);
-  
+
   const isVideo = ['mp4', 'webm', 'mov'].includes(fileExtension);
   const isAudio = ['mp3', 'wav', 'ogg'].includes(fileExtension);
   const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension);
   const isPdf = fileExtension === 'pdf';
   const canPreview = isVideo || isAudio || isImage || isPdf;
-  
+
   useEffect(() => {
     setLoading(true);
     setPreviewError(false);
   }, [file]);
-  
+
   const handleLoad = () => {
     setLoading(false);
   };
-  
+
   const handleError = () => {
     setLoading(false);
     setPreviewError(true);
   };
-  
+
   return (
     <div className="preview-container">
       {canPreview ? (
         <div className="relative">
-          <AspectRatio ratio={16 / 9} className="bg-muted/30">
+          <AspectRatio ratio={16 / 9} className="bg-muted/30 rounded-xl overflow-hidden">
             <AnimatePresence>
               {loading && (
                 <motion.div
@@ -53,7 +53,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
                 </motion.div>
               )}
             </AnimatePresence>
-            
+
             {!previewError ? (
               <>
                 {isVideo && (
@@ -63,7 +63,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
                     controls
                     preload="metadata"
                     controlsList="nodownload"
-                    className="w-full h-full object-contain"
+                    className="w-full max-h-[700px] md:max-h-[80vh] object-contain rounded-xl"
                     onLoadedData={handleLoad}
                     onError={handleError}
                     crossOrigin="anonymous"
@@ -73,11 +73,11 @@ export default function FilePreview({ file }: FilePreviewProps) {
                     Your browser does not support the video tag.
                   </video>
                 )}
-                
+
                 {isAudio && (
                   <div className="w-full h-full flex items-center justify-center bg-muted/20 p-4">
                     <div className="w-full max-w-md">
-                      <motion.div 
+                      <motion.div
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.3 }}
@@ -95,22 +95,22 @@ export default function FilePreview({ file }: FilePreviewProps) {
                     </div>
                   </div>
                 )}
-                
+
                 {isImage && (
                   <img
                     src={file.proxy_url}
                     alt={file.file_name}
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain rounded-xl"
                     onLoad={handleLoad}
                     onError={handleError}
                   />
                 )}
-                
+
                 {isPdf && (
                   <iframe
                     src={file.proxy_url}
                     title="PDF Preview"
-                    className="w-full h-full border-0"
+                    className="w-full h-full border-0 rounded-xl"
                     onLoad={handleLoad}
                     onError={handleError}
                   />
@@ -125,11 +125,11 @@ export default function FilePreview({ file }: FilePreviewProps) {
           </AspectRatio>
         </div>
       ) : (
-        <div className="flex items-center justify-center py-12 bg-muted/10">
+        <div className="flex items-center justify-center py-12 bg-muted/10 rounded-xl">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
             className="flex flex-col items-center"
           >
             {fileExtension === 'zip' || fileExtension === 'rar' ? (
