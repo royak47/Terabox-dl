@@ -106,7 +106,7 @@ export default function FileDetails({ file }: FileDetailsProps) {
               onClick={() => window.open(file.proxy_url, '_blank')}
             >
               <Download className="w-4 h-4" />
-              Download
+              Watch & Download
               <motion.div
                 className="absolute inset-0 rounded-md bg-white"
                 initial={{ scale: 0, opacity: 0 }}
