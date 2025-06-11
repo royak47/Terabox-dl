@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { File, FileAudio, FileBadge } from 'lucide-react';
+import { File, FileAudio, FileBadge, Maximize2 } from 'lucide-react';
 import { TeraboxFile } from '@/types/terabox';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,35 +13,41 @@ interface FilePreviewProps {
 export default function FilePreview({ file }: FilePreviewProps) {
   const [loading, setLoading] = useState(true);
   const [previewError, setPreviewError] = useState(false);
-  
+
   const fileExtension = file.file_name.split('.').pop()?.toLowerCase() || '';
   const mimeType = file.mime_type || getMimeType(file.file_name);
-  
+
   const isVideo = ['mp4', 'webm', 'mov'].includes(fileExtension);
   const isAudio = ['mp3', 'wav', 'ogg'].includes(fileExtension);
   const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension);
   const isPdf = fileExtension === 'pdf';
   const canPreview = isVideo || isAudio || isImage || isPdf;
-  
-  useEffect(() => {
-    setLoading(true);
-    setPreviewError(false);
-  }, [file]);
-  
-  const handleLoad = () => {
-    setLoading(false);
-  };
-  
+
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleLoad = () => setLoading(false);
   const handleError = () => {
     setLoading(false);
     setPreviewError(true);
   };
-  
+
+  const handleFullscreen = () => {
+    if (videoContainerRef.current?.requestFullscreen) {
+      videoContainerRef.current.requestFullscreen();
+    }
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    setPreviewError(false);
+  }, [file]);
+
   return (
     <div className="preview-container">
       {canPreview ? (
         <div className="relative">
-          <AspectRatio ratio={16 / 9} className="bg-muted/30">
+          <AspectRatio ratio={16 / 9} className="bg-muted/30 rounded-lg overflow-hidden">
             <AnimatePresence>
               {loading && (
                 <motion.div
@@ -53,31 +59,42 @@ export default function FilePreview({ file }: FilePreviewProps) {
                 </motion.div>
               )}
             </AnimatePresence>
-            
+
             {!previewError ? (
               <>
                 {isVideo && (
-                  <video
-                    src={file.proxy_url}
-                    poster={file.thumbnail}
-                    controls
-                    preload="metadata"
-                    controlsList="nodownload"
-                    className="w-full h-full object-contain"
-                    onLoadedData={handleLoad}
-                    onError={handleError}
-                    crossOrigin="anonymous"
-                    playsInline
-                  >
-                    <source src={file.proxy_url} type={mimeType} />
-                    Your browser does not support the video tag.
-                  </video>
+                  <div className="relative w-full h-full" ref={videoContainerRef}>
+                    <video
+                      ref={videoRef}
+                      src={file.proxy_url}
+                      poster={file.thumbnail}
+                      controls
+                      preload="metadata"
+                      controlsList="nodownload"
+                      className="w-full h-full object-contain"
+                      onLoadedData={handleLoad}
+                      onError={handleError}
+                      crossOrigin="anonymous"
+                      playsInline
+                    >
+                      <source src={file.proxy_url} type={mimeType} />
+                      Your browser does not support the video tag.
+                    </video>
+
+                    <button
+                      onClick={handleFullscreen}
+                      className="absolute bottom-3 right-3 bg-black/60 text-white px-2 py-1 rounded-md text-xs flex items-center gap-1 hover:bg-black/80 transition"
+                    >
+                      <Maximize2 size={14} />
+                      Fullscreen
+                    </button>
+                  </div>
                 )}
-                
+
                 {isAudio && (
                   <div className="w-full h-full flex items-center justify-center bg-muted/20 p-4">
                     <div className="w-full max-w-md">
-                      <motion.div 
+                      <motion.div
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.3 }}
@@ -95,7 +112,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
                     </div>
                   </div>
                 )}
-                
+
                 {isImage && (
                   <img
                     src={file.proxy_url}
@@ -105,7 +122,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
                     onError={handleError}
                   />
                 )}
-                
+
                 {isPdf && (
                   <iframe
                     src={file.proxy_url}
@@ -129,7 +146,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
             className="flex flex-col items-center"
           >
             {fileExtension === 'zip' || fileExtension === 'rar' ? (
@@ -140,7 +157,8 @@ export default function FilePreview({ file }: FilePreviewProps) {
               <File className="w-16 h-16 text-muted-foreground" />
             )}
             <p className="text-muted-foreground mt-4 max-w-md text-center text-sm">
-              Preview not available for {fileExtension.toUpperCase()} files. Use the download buttons below to access the file.
+              Preview not available for {fileExtension.toUpperCase()} files. Use the download
+              buttons below to access the file.
             </p>
           </motion.div>
         </div>
