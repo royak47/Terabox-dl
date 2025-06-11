@@ -6,7 +6,7 @@ Fetches direct download URLs or proxy-downloads files via a Cloudflare Worker.
 ### Give this repo a star please! ⭐
 
 
-Live: https://downloadterabox.com
+Live: https://www.downloadterabox.com
 
 ## Features
 
