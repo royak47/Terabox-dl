@@ -39,8 +39,7 @@ function App() {
 
     setIsLoading(true);
     try {
-      const apiBase =
-        import.meta.env.MODE === 'development' ? '/api' : WORKER_URL;
+      const apiBase = import.meta.env.MODE === 'development' ? '/api' : WORKER_URL;
       const response = await fetch(apiBase, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -92,7 +91,7 @@ function App() {
 
   return (
     <ThemeProvider defaultTheme="dark" storageKey="terabox-theme">
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-zinc-900 to-black text-white transition-colors duration-500 font-sans overflow-x-hidden">
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-500 font-sans overflow-x-hidden">
         <Navbar />
         <main className="container mx-auto px-4 md:px-6 py-6 md:py-10">
           <motion.div
@@ -101,10 +100,11 @@ function App() {
             animate="visible"
             className="max-w-3xl mx-auto space-y-10"
           >
-            <section className="bg-white/5 dark:bg-black/30 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl p-6 md:p-8 transition-all duration-300">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-primary">
-                <Download className="w-5 h-5" />
-                Download Link Generator
+            {/* Download Link Generator */}
+            <section className="rounded-3xl border border-border bg-card backdrop-blur-lg shadow-[0_8px_30px_rgba(0,0,0,0.2)] p-8 md:p-10 transition-all duration-300">
+              <h2 className="text-2xl md:text-3xl font-bold mb-6 flex items-center gap-3 text-primary tracking-tight">
+                <Download className="w-6 h-6" />
+                TeraBox Link Extractor
               </h2>
 
               <TeraboxForm onSubmit={handleFetchFile} isLoading={isLoading} />
@@ -112,11 +112,11 @@ function App() {
               <AnimatePresence mode="wait">
                 {currentFile && (
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="mt-6"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.4, ease: 'easeInOut' }}
+                    className="mt-6 rounded-xl bg-muted/40 p-6 border border-border"
                   >
                     <FileDetails file={currentFile} />
                   </motion.div>
@@ -124,26 +124,28 @@ function App() {
               </AnimatePresence>
             </section>
 
-            <div id="container-ads" className="text-center text-sm text-white/40" />
+            {/* Ads placeholder */}
+            <div id="container-ads" className="text-center text-sm text-muted-foreground" />
 
-            <section className="bg-white/5 dark:bg-black/30 backdrop-blur-md border border-white/10 shadow-xl rounded-2xl p-6 md:p-8 transition-all duration-300">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-primary">
+            {/* Download History */}
+            <section className="bg-muted/30 border border-border rounded-2xl p-6 md:p-8 shadow-inner transition-all duration-300">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-muted-foreground">
                 <Clock className="w-5 h-5" />
-                Download History
+                Recent Downloads
               </h2>
-
               <HistorySection onSelectFile={setCurrentFile} />
             </section>
 
-            <footer className="text-center text-xs text-muted-foreground pt-6 pb-2">
-              Developed by <span className="font-medium">DARK LIFE 🧬</span> •{' '}
+            {/* Footer */}
+            <footer className="text-center text-sm text-muted-foreground mt-10">
+              Developed by <span className="font-semibold text-foreground">DARK LIFE 🧬</span> •{' '}
               <a
                 href="https://t.me/scripthub0"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline hover:text-primary"
               >
-                © CONTACT INFO
+                Contact
               </a>
             </footer>
           </motion.div>
