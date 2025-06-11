@@ -13,6 +13,7 @@ interface FilePreviewProps {
 export default function FilePreview({ file }: FilePreviewProps) {
   const [loading, setLoading] = useState(true);
   const [previewError, setPreviewError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const fileExtension = file.file_name.split('.').pop()?.toLowerCase() || '';
   const mimeType = file.mime_type || getMimeType(file.file_name);
@@ -23,8 +24,10 @@ export default function FilePreview({ file }: FilePreviewProps) {
   const isPdf = fileExtension === 'pdf';
   const canPreview = isVideo || isAudio || isImage || isPdf;
 
-  const videoContainerRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    setLoading(true);
+    setPreviewError(false);
+  }, [file]);
 
   const handleLoad = () => setLoading(false);
   const handleError = () => {
@@ -33,21 +36,20 @@ export default function FilePreview({ file }: FilePreviewProps) {
   };
 
   const handleFullscreen = () => {
-    if (videoContainerRef.current?.requestFullscreen) {
-      videoContainerRef.current.requestFullscreen();
+    if (videoRef.current) {
+      const video = videoRef.current;
+      if (video.requestFullscreen) video.requestFullscreen();
+      else if ((video as any).webkitRequestFullscreen) (video as any).webkitRequestFullscreen();
+      else if ((video as any).mozRequestFullScreen) (video as any).mozRequestFullScreen();
+      else if ((video as any).msRequestFullscreen) (video as any).msRequestFullscreen();
     }
   };
-
-  useEffect(() => {
-    setLoading(true);
-    setPreviewError(false);
-  }, [file]);
 
   return (
     <div className="preview-container">
       {canPreview ? (
         <div className="relative">
-          <AspectRatio ratio={16 / 9} className="bg-muted/30 rounded-lg overflow-hidden">
+          <AspectRatio ratio={16 / 9} className="bg-muted/30">
             <AnimatePresence>
               {loading && (
                 <motion.div
@@ -63,7 +65,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
             {!previewError ? (
               <>
                 {isVideo && (
-                  <div className="relative w-full h-full" ref={videoContainerRef}>
+                  <div className="relative w-full h-full">
                     <video
                       ref={videoRef}
                       src={file.proxy_url}
@@ -83,10 +85,10 @@ export default function FilePreview({ file }: FilePreviewProps) {
 
                     <button
                       onClick={handleFullscreen}
-                      className="absolute bottom-3 right-3 bg-black/60 text-white px-2 py-1 rounded-md text-xs flex items-center gap-1 hover:bg-black/80 transition"
+                      className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full z-10"
+                      aria-label="Fullscreen"
                     >
-                      <Maximize2 size={14} />
-                      Fullscreen
+                      <Maximize2 className="w-5 h-5" />
                     </button>
                   </div>
                 )}
@@ -157,8 +159,7 @@ export default function FilePreview({ file }: FilePreviewProps) {
               <File className="w-16 h-16 text-muted-foreground" />
             )}
             <p className="text-muted-foreground mt-4 max-w-md text-center text-sm">
-              Preview not available for {fileExtension.toUpperCase()} files. Use the download
-              buttons below to access the file.
+              Preview not available for {fileExtension.toUpperCase()} files. Use the download buttons below to access the file.
             </p>
           </motion.div>
         </div>
