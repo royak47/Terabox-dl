@@ -145,7 +145,7 @@ function App() {
                 rel="noopener noreferrer"
                 className="underline hover:text-primary"
               >
-               @2025 This website is not an official Terabox website and we are not associated with downloadterabox.com or Scripthub.
+               @2025 This website is not an official Terabox website and we are not associated with terabox.app or Flextech Inc..
               </a>
             </footer>
           </motion.div>
