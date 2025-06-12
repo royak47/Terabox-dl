@@ -137,16 +137,22 @@ function App() {
             </section>
 
             {/* Footer */}
-            <footer className="text-center text-sm text-muted-foreground mt-10">
-              Developed by <span className="font-semibold text-foreground">DARK LIFE 🧬</span> •{' '}
-              <a
-                href="https://t.me/scripthub0"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-primary"
-              >
-               @2025 This website is not an official Terabox website and we are not associated with terabox.app or Flextech Inc..
-              </a>
+            <footer className="text-center text-sm text-muted-foreground mt-10 space-y-1">
+              <div>
+                Developed by <span className="font-semibold text-foreground">DARK LIFE 🧬</span>
+              </div>
+              <div className="text-xs">
+                © 2025 — This website is not an official Terabox website and we are not associated with
+                <a
+                  href="https://downloadterabox.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-primary ml-1"
+                >
+                  downloadterabox.com
+                </a>{' '}
+                or Scripthub.
+              </div>
             </footer>
           </motion.div>
         </main>
