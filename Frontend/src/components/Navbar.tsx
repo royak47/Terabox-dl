@@ -134,7 +134,9 @@ export default function Navbar() {
                   </li>
                   <li>
                     <a
-                      href="telegram:https://t.me/scripthub0"
+                      href="https://t.me/scripthub0"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="hover:underline block"
                     >
                       📧 Support
