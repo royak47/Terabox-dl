@@ -1,33 +1,47 @@
-const COOKIE = "ndus=YzeXcd1peHuiK2_zig1UkhLraLgytieQ2TwpyHiy; ndut_fmt=35E53AA0B7793B84FF6E3D1F88C1A7D86BC036C1885B169D0EAA35446C0F2E65;";
+// List of Terabox cookie strings (import from files ideally)
+const COOKIES = [
+  'ndus=XXX1; ndut_fmt=YYY1;',
+  'ndus=XXX2; ndut_fmt=YYY2;',
+  // Add more cookie strings as needed
+];
 
-const HEADERS = {
-  "Accept": "application/json, text/plain, */*",
-  "Accept-Encoding": "gzip, deflate, br",
-  "Accept-Language": "en-US,en;q=0.9",
-  "Connection": "keep-alive",
-  "DNT": "1",
-  "Host": "www.terabox.app",
-  "Upgrade-Insecure-Requests": "1",
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/135.0.0.0 Safari/537.36",
-  "sec-ch-ua": '"Microsoft Edge";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
-  "Sec-Fetch-Dest": "document",
-  "Sec-Fetch-Mode": "navigate",
-  "Sec-Fetch-Site": "none",
-  "Sec-Fetch-User": "?1",
-  "sec-ch-ua-mobile": "?0",
-  "sec-ch-ua-platform": '"Windows"',
-  "Cookie": COOKIE,
-};
+function getRandomCookie() {
+  const cookie = COOKIES[Math.floor(Math.random() * COOKIES.length)];
+  return cookie;
+}
 
-const DL_HEADERS = {
-  "User-Agent": HEADERS["User-Agent"],
-  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-  "Referer": "https://terabox.com/",
-  "DNT": "1",
-  "Connection": "keep-alive",
-  "Upgrade-Insecure-Requests": "1",
-  "Cookie": COOKIE,
-};
+function createHeaders(cookie) {
+  return {
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Connection": "keep-alive",
+    "DNT": "1",
+    "Host": "www.terabox.app",
+    "Upgrade-Insecure-Requests": "1",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/135.0.0.0 Safari/537.36",
+    "sec-ch-ua": '"Microsoft Edge";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"Windows"',
+    "Cookie": cookie,
+  };
+}
+
+function createDLHeaders(cookie) {
+  return {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/135.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Referer": "https://terabox.com/",
+    "DNT": "1",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Cookie": cookie,
+  };
+}
 
 function getSize(bytes) {
   if (bytes >= 1 << 30) return `${(bytes / (1 << 30)).toFixed(2)} GB`;
@@ -46,6 +60,9 @@ function findBetween(str, start, end) {
 
 async function getFileInfo(link, request) {
   if (!link) return { error: "Link cannot be empty." };
+
+  const cookie = getRandomCookie();
+  const HEADERS = createHeaders(cookie);
 
   let response = await fetch(link, { headers: HEADERS });
   if (!response.ok) return { error: `Initial fetch failed with status: ${response.status}` };
@@ -98,6 +115,9 @@ async function getFileInfo(link, request) {
 }
 
 async function proxyDownload(url, fileName, request) {
+  const cookie = getRandomCookie();
+  const DL_HEADERS = createDLHeaders(cookie);
+
   try {
     const headers = new Headers(DL_HEADERS);
     const range = request.headers.get("Range");
