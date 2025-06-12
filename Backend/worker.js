@@ -1,7 +1,7 @@
 // List of Terabox cookie strings (import from files ideally)
 const COOKIES = [
-  'ndus=XXX1; ndut_fmt=YYY1;',
-  'ndus=XXX2; ndut_fmt=YYY2;',
+  'ndus=YzeXcd1peHuiK2_zig1UkhLraLgytieQ2TwpyHiy; ndut_fmt=35E53AA0B7793B84FF6E3D1F88C1A7D86BC036C1885B169D0EAA35446C0F2E65;',
+  'ndus=YV2gziEteHuirP143VrwHfvzxBYjlRyws16RqEca; ndut_fmt=09299EF54861A4CE7868C0A70C12FA4C526F756846080492F91DCF9A4A56CE55;',
   // Add more cookie strings as needed
 ];
 
