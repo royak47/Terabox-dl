@@ -144,14 +144,14 @@ function App() {
               <div className="text-xs">
                 © 2025 — This website is not an official Terabox website and we are not associated with
                 <a
-                  href="https://downloadterabox.com"
+                  href="https://terabox.APP"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline hover:text-primary ml-1"
                 >
-                  downloadterabox.com
+                  terabox.App
                 </a>{' '}
-                or Scripthub.
+                or Flextech Inc.
               </div>
             </footer>
           </motion.div>
