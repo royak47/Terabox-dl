@@ -11,41 +11,31 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [fileData, setFileData] = useState(null);
   const [error, setError] = useState("");
-  const [debugInfo, setDebugInfo] = useState("");
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [isVideoBuffering, setIsVideoBuffering] = useState(false);
 
   const handleFetch = async (retryCount = 3) => {
-    console.log("handleFetch triggered with link:", link);
     if (!link.trim()) {
       setError("Please paste a TeraBox link.");
-      console.log("Error: Empty link");
       return;
     }
     if (!link.includes("terabox") && !link.includes("1024tera")) {
       setError("Please enter a valid TeraBox link.");
-      console.log("Error: Invalid link format");
       return;
     }
 
     setLoading(true);
     setError("");
     setFileData(null);
-    setDebugInfo("");
 
     for (let attempt = 1; attempt <= retryCount; attempt++) {
       try {
-        setDebugInfo(`Attempt ${attempt}: Sending request to backend...`);
-        console.log(`Attempt ${attempt}: Sending to ${BACKEND_URL} with link: ${link}`);
         const res = await fetch(BACKEND_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ link: link.trim() }),
         });
-
-        setDebugInfo(`Attempt ${attempt}: Response status: ${res.status}`);
-        console.log(`Attempt ${attempt}: Status ${res.status}`);
 
         if (!res.ok) {
           const errorText = await res.text();
@@ -53,86 +43,57 @@ function Home() {
         }
 
         const data = await res.json();
-        setDebugInfo(`Attempt ${attempt}: Response received successfully`);
-        console.log("Backend response:", data);
-
         if (data.error) {
           setError(data.error);
-          console.log("Backend error:", data.error);
         } else {
           setFileData(data);
           setError("");
-          console.log("File data set:", data);
-          if (data.debug_info) {
-            setDebugInfo(prev => `${prev}\n${data.debug_info}`);
-          }
           break;
         }
       } catch (e) {
-        console.error(`Attempt ${attempt} failed:`, e);
-        setDebugInfo(`Attempt ${attempt}: Error details: ${e.message}`);
         if (attempt === retryCount) {
           setError(`Connection failed after ${retryCount} attempts: ${e.message}`);
-          console.log("Final error:", e.message);
         }
       }
     }
     setLoading(false);
-    console.log("Fetch complete, loading:", false);
   };
 
-  const handleDirectDownload = async (url, filename) => {
-    console.log("handleDirectDownload triggered for:", filename, "URL:", url);
-    if (!url || !filename) {
-      console.error("Invalid URL or filename:", { url, filename });
+  const handleDirectDownload = async (proxyUrl, directUrl, filename) => {
+    if (!directUrl || !filename) {
       setError("Invalid download link or filename. Try 'Open Link'.");
       return;
     }
 
-    try {
-      console.log("Pre-checking URL:", url);
-      const response = await fetch(url, { method: "HEAD", mode: "cors" });
-      const headers = Object.fromEntries(response.headers);
-      console.log("HEAD response:", { status: response.status, headers });
-      setDebugInfo(prev => `${prev}\nDownload URL check: Status ${response.status}, Content-Type: ${headers['content-type'] || 'none'}, Content-Disposition: ${headers['content-disposition'] || 'none'}`);
-
-      if (!response.ok) {
-        throw new Error(`URL not accessible, status: ${response.status}`);
+    const attemptDownload = async (url) => {
+      try {
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = encodeURIComponent(filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return true;
+      } catch (e) {
+        return false;
       }
+    };
 
-      if (!headers['content-disposition']?.includes('attachment')) {
-        console.warn("Warning: Content-Disposition is not 'attachment'. Download may open in browser.");
-        setDebugInfo(prev => `${prev}\nWarning: Missing Content-Disposition: attachment`);
-      }
+    // Try direct download first
+    let success = await attemptDownload(directUrl);
 
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = encodeURIComponent(filename);
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      document.body.appendChild(link);
-      console.log("Attempting to trigger download for:", url);
-      link.click();
-      document.body.removeChild(link);
-      console.log("Download triggered successfully");
+    // Fallback to proxy URL if direct download fails and proxyUrl exists
+    if (!success && proxyUrl) {
+      success = await attemptDownload(proxyUrl);
+    }
 
-      setTimeout(() => {
-        console.log("Checking if download started...");
-        window.open(url, "_blank");
-        console.log("Fallback: Opened URL in new tab:", url);
-        setDebugInfo(prev => `${prev}\nTriggered fallback: Opened URL in new tab`);
-      }, 3000);
-    } catch (e) {
-      console.error("Direct download failed:", e);
-      setError(`Failed to start download: ${e.message}. Opening link as fallback...`);
-      setDebugInfo(prev => `${prev}\nDownload failed: ${e.message}`);
-      window.open(url, "_blank");
-      console.log("Fallback: Opened URL in new tab:", url);
+    // If both fail, show error and suggest opening the link
+    if (!success) {
+      setError("Failed to start download. Please try 'Open Link' or use a download manager.");
     }
   };
 
   const handleOnlineWatch = async (proxyUrl, filename) => {
-    console.log("handleOnlineWatch triggered for:", filename);
     try {
       const response = await fetch(proxyUrl, { method: "HEAD" });
       if (response.ok) {
@@ -176,20 +137,17 @@ function Home() {
         throw new Error("URL not accessible");
       }
     } catch (error) {
-      console.log("Direct URL access failed, trying fallback...", error);
       window.open(proxyUrl, "_blank");
     }
   };
 
   const toggleVideoPlayer = () => {
-    console.log("Toggling video player, current state:", showVideoPlayer);
     setShowVideoPlayer(!showVideoPlayer);
     setVideoError(false);
     setIsVideoBuffering(true);
   };
 
   const handleVideoError = (e) => {
-    console.error("Video playback error:", e);
     setVideoError(true);
     setIsVideoBuffering(false);
     setError(
@@ -208,11 +166,9 @@ function Home() {
   };
 
   const reset = () => {
-    console.log("Resetting state");
     setLink("");
     setFileData(null);
     setError("");
-    setDebugInfo("");
     setShowVideoPlayer(false);
     setVideoError(false);
     setIsVideoBuffering(false);
@@ -220,7 +176,6 @@ function Home() {
 
   const getVideoPreviewUrl = (url, filename) => {
     const previewUrl = `${BACKEND_URL}/proxy?url=${encodeURIComponent(url)}&file_name=${encodeURIComponent(filename)}`;
-    console.log("Generated video preview URL:", previewUrl);
     return previewUrl;
   };
 
@@ -255,10 +210,7 @@ function Home() {
                     />
                   </div>
                   <button
-                    onClick={() => {
-                      console.log("Get Download Link button clicked");
-                      handleFetch();
-                    }}
+                    onClick={handleFetch}
                     disabled={loading || !link.trim()}
                     className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-400 text-white px-6 py-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2"
                   >
@@ -436,11 +388,11 @@ function Home() {
                             </button>
                           )}
                           <button
-                            onClick={() => handleDirectDownload(fileData.proxy_url || fileData.download_link, fileData.file_name)}
+                            onClick={() => handleDirectDownload(fileData.proxy_url, fileData.download_link, fileData.file_name)}
                             className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
                           >
                             <Download className="w-4 h-4" />
-                            Direct Download (Proxy Fallback)
+                            Direct Download
                           </button>
                           {fileData?.file_name && isImageFile(fileData.file_name) && (
                             <button
@@ -508,18 +460,6 @@ function Home() {
                       )}
                     </div>
                   </div>
-                </div>
-              )}
-
-              {debugInfo && (
-                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4 mb-6">
-                  <h4 className="font-medium mb-2">Debug Information:</h4>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 font-mono">{debugInfo}</p>
-                  {debugInfo.includes("response time") && (
-                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
-                      💡 Slow response detected? Try a VPN, download manager, or TeraBox premium account for better speeds.
-                    </p>
-                  )}
                 </div>
               )}
 
