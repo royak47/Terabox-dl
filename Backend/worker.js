@@ -2,7 +2,7 @@
 const COOKIES = [
   'ndus=YzeXcd1peHuiK2_zig1UkhLraLgytieQ2TwpyHiy; ndut_fmt=35E53AA0B7793B84FF6E3D1F88C1A7D86BC036C1885B169D0EAA35446C0F2E65;',
   'ndus=YV2gziEteHuirP143VrwHfvzxBYjlRyws16RqEca; ndut_fmt=09299EF54861A4CE7868C0A70C12FA4C526F756846080492F91DCF9A4A56CE55;',
-  // Add more cookies if needed
+  // Add premium cookies here, e.g., 'ndus=premium_cookie; ndut_fmt=premium_format;'
 ];
 
 function createHeaders(cookie) {
@@ -56,22 +56,33 @@ function findBetween(str, start, end) {
 async function getFileInfo(link, request) {
   if (!link) return { error: "Link cannot be empty." };
 
-  for (const cookie of COOKIES) {
+  for (let i = 0; i < COOKIES.length; i++) {
+    const cookie = COOKIES[i];
     try {
+      console.log(`Trying cookie ${i + 1}/${COOKIES.length}`);
       const HEADERS = createHeaders(cookie);
       const response = await fetch(link, { headers: HEADERS });
-      if (!response.ok) continue;
+      if (!response.ok) {
+        console.log(`Cookie ${i + 1} failed with status ${response.status}`);
+        continue;
+      }
 
       const finalUrl = response.url;
       const surl = new URL(finalUrl).searchParams.get("surl");
-      if (!surl) continue;
+      if (!surl) {
+        console.log(`Cookie ${i + 1}: No surl found`);
+        continue;
+      }
 
       const text = await response.text();
       const jsToken = findBetween(text, 'fn%28%22', '%22%29');
       const logid = findBetween(text, 'dp-logid=', '&');
       const bdstoken = findBetween(text, 'bdstoken":"', '"');
 
-      if (!jsToken || !logid || !bdstoken) continue;
+      if (!jsToken || !logid || !bdstoken) {
+        console.log(`Cookie ${i + 1}: Missing jsToken, logid, or bdstoken`);
+        continue;
+      }
 
       const params = new URLSearchParams({
         app_id: "250528",
@@ -92,9 +103,21 @@ async function getFileInfo(link, request) {
       const fileListRes = await fetch(`https://dm.terabox.app/share/list?${params}`, { headers: HEADERS });
       const data = await fileListRes.json();
 
-      if (!data?.list?.length || data.errno) continue;
+      if (!data?.list?.length || data.errno) {
+        console.log(`Cookie ${i + 1}: No file list or errno ${data.errno}`);
+        continue;
+      }
 
       const file = data.list[0];
+      let speedInfo = "";
+      if (file.dlink) {
+        const startTime = Date.now();
+        const testRes = await fetch(file.dlink, { method: "HEAD", headers: createDLHeaders(cookie) });
+        const duration = (Date.now() - startTime) / 1000;
+        speedInfo = `Download link response time: ${duration}s, status: ${testRes.status}`;
+        console.log(speedInfo);
+      }
+
       return {
         file_name: file.server_filename || "unknown",
         download_link: file.dlink || "",
@@ -102,13 +125,15 @@ async function getFileInfo(link, request) {
         file_size: getSize(parseInt(file.size || 0)),
         size_bytes: parseInt(file.size || 0),
         proxy_url: `https://${new URL(request.url).host}/proxy?url=${encodeURIComponent(file.dlink)}&file_name=${encodeURIComponent(file.server_filename || 'download')}`,
+        debug_info: speedInfo,
       };
     } catch (e) {
-      continue; // Try next cookie
+      console.log(`Cookie ${i + 1} error: ${e.message}`);
+      continue;
     }
   }
 
-  return { error: "All cookie attempts failed. Try again later or update cookies." };
+  return { error: "All cookie attempts failed. Try updating cookies or try again later." };
 }
 
 async function proxyDownload(url, fileName, request) {
@@ -121,17 +146,20 @@ async function proxyDownload(url, fileName, request) {
 
       const res = await fetch(url, { headers, redirect: "follow" });
 
-      if (!res.ok && res.status !== 206) continue;
+      if (!res.ok && res.status !== 206) {
+        console.log(`Proxy fetch failed with status ${res.status}`);
+        continue;
+      }
 
       const responseHeaders = new Headers({
         "Content-Type": res.headers.get("Content-Type") || "application/octet-stream",
         "Content-Disposition": `inline; filename="${encodeURIComponent(fileName)}"`,
         "Accept-Ranges": "bytes",
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": "public, max-age=3600, s-maxage=3600",
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type,Range",
-        "Access-Control-Expose-Headers": "Content-Length,Content-Range"
+        "Access-Control-Expose-Headers": "Content-Length,Content-Range",
       });
 
       if (res.headers.has("Content-Range"))
@@ -144,6 +172,7 @@ async function proxyDownload(url, fileName, request) {
         headers: responseHeaders,
       });
     } catch (e) {
+      console.log(`Proxy error with cookie: ${e.message}`);
       continue;
     }
   }
@@ -203,5 +232,5 @@ export default {
       status: 405,
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
-  }
+  },
 };
