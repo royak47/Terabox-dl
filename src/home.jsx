@@ -6,24 +6,16 @@ import Footer from "./Footer";
 
 const BACKEND_URL = "https://raspy-wave-5e61.sonukalakhari76.workers.dev";
 
-interface FileDetails {
-  file_name: string;
-  file_size: string;
-  download_link: string;
-  proxy_url?: string;
-  thumbnail?: string;
-}
+const Home = () => {
+  const [shareLink, setShareLink] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [fileDetails, setFileDetails] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [hasVideoError, setHasVideoError] = useState(false);
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
 
-const Home: React.FC = () => {
-  const [shareLink, setShareLink] = useState<string>("");
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [fileDetails, setFileDetails] = useState<FileDetails | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  const [showVideoPlayer, setShowVideoPlayer] = useState<boolean>(false);
-  const [hasVideoError, setHasVideoError] = useState<boolean>(false);
-  const [isVideoLoading, setIsVideoLoading] = useState<boolean>(false);
-
-  const supportedDomains: string[] = [
+  const supportedDomains = [
     "terabox.com",
     "terabox.app",
     "teraboxapp.com",
@@ -38,7 +30,7 @@ const Home: React.FC = () => {
     "tibibox.com",
   ];
 
-  const normalizeUrl = (url: string): string =>
+  const normalizeUrl = (url) =>
     url
       .toLowerCase()
       .replace(/^https?:\/\//, "")
@@ -46,10 +38,10 @@ const Home: React.FC = () => {
       .replace(/\/+$/, "")
       .trim();
 
-  const isValidLink = (url: string): boolean =>
+  const isValidLink = (url) =>
     supportedDomains.some((domain) => normalizeUrl(url).includes(domain));
 
-  const handleFetch = async (): Promise<void> => {
+  const handleFetch = async () => {
     if (!shareLink.trim()) {
       setErrorMessage("Please enter a share link.");
       return;
@@ -94,7 +86,7 @@ const Home: React.FC = () => {
     }
   };
 
-  const handleDirectDownload = async (url: string, filename: string): Promise<void> => {
+  const handleDirectDownload = async (url, filename) => {
     if (!url || !filename) {
       setErrorMessage("Invalid download link or filename. Try 'Fast Download'.");
       return;
@@ -120,7 +112,7 @@ const Home: React.FC = () => {
     }
   };
 
-  const handleOnlineWatch = async (proxyUrl: string, filename: string): Promise<void> => {
+  const handleOnlineWatch = async (proxyUrl, filename) => {
     try {
       const response = await fetch(proxyUrl, { method: "HEAD" });
       if (response.ok && isVideoFile(filename)) {
@@ -164,27 +156,27 @@ const Home: React.FC = () => {
     }
   };
 
-  const toggleVideoPlayer = (): void => {
+  const toggleVideoPlayer = () => {
     setShowVideoPlayer(!showVideoPlayer);
     setHasVideoError(false);
     setIsVideoLoading(true);
   };
 
-  const handleVideoError = (): void => {
+  const handleVideoError = () => {
     setHasVideoError(true);
     setIsVideoLoading(false);
     setErrorMessage("Video preview failed. Try 'Watch Online' or 'Direct Download'.");
   };
 
-  const isVideoFile = (filename: string): boolean =>
+  const isVideoFile = (filename) =>
     [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".3gp"].some((ext) =>
       filename.toLowerCase().endsWith(ext)
     );
 
-  const isImageFile = (filename: string): boolean =>
+  const isImageFile = (filename) =>
     [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"].some((ext) => filename.toLowerCase().endsWith(ext));
 
-  const reset = (): void => {
+  const reset = () => {
     setShareLink("");
     setFileDetails(null);
     setErrorMessage("");
@@ -193,7 +185,7 @@ const Home: React.FC = () => {
     setIsVideoLoading(false);
   };
 
-  const getVideoPreviewUrl = (url: string, filename: string): string =>
+  const getVideoPreviewUrl = (url, filename) =>
     `${BACKEND_URL}/proxy?url=${encodeURIComponent(url)}&file_name=${encodeURIComponent(filename)}`;
 
   return (
