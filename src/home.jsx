@@ -16,32 +16,44 @@ function Home() {
   const [isVideoBuffering, setIsVideoBuffering] = useState(false);
 
   const supportedDomains = [
-    "terabox.com",
-    "terabox.app",
-    "teraboxapp.com",
-    "terabox.fun",
-    "1024tera.com",
-    "4funbox.com",
-    "4funbox.co",
     "mirrobox.com",
     "nephobox.com",
     "freeterabox.com",
+    "1024tera.com",
+    "4funbox.co",
+    "4funbox.com",
+    "terabox.app",
+    "terabox.com",
+    "terabox.fun",
     "momerybox.com",
     "tibibox.com",
+    "teraboxapp.com",
   ];
+
+  const normalizeUrl = (url) => {
+    // Remove protocol (http://, https://), www., and trim spaces
+    return url
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .trim();
+  };
 
   const handleFetch = async (retryCount = 3) => {
     if (!link.trim()) {
-      setError("Please paste a TeraBox link.");
+      setError("Please paste a share link.");
       return;
     }
 
+    const normalizedLink = normalizeUrl(link);
     const isValidDomain = supportedDomains.some((domain) =>
-      link.toLowerCase().includes(domain)
+      normalizedLink.includes(domain)
     );
 
     if (!isValidDomain) {
-      setError("Please enter a valid link from a supported domain.");
+      setError(
+        "Please enter a valid share link from a supported domain (e.g., terabox.com, 1024tera.com, etc.). Ensure the link is a public share link like https://terabox.com/s/xxxxxx."
+      );
       return;
     }
 
@@ -205,7 +217,7 @@ function Home() {
               <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 TeraBox Downloader
               </h1>
-              <p className="text-zinc-600 dark:text-zinc-400">Download files from TeraBox with ease</p>
+              <p className="text-zinc-600 dark:text-zinc-400">Download files from supported platforms with ease</p>
             </div>
 
             <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-xl p-6 mb-6">
@@ -213,12 +225,12 @@ function Home() {
                 <div className="space-y-4">
                   <div>
                     <label htmlFor="link" className="block text-sm font-medium mb-2">
-                      TeraBox Share Link
+                      Share Link
                     </label>
                     <input
                       id="link"
                       type="text"
-                      placeholder="Paste your share link here"
+                      placeholder="e.g., https://terabox.com/s/xxxxxx or https://1024tera.com/s/xxxxxx"
                       value={link}
                       onChange={(e) => setLink(e.target.value)}
                       className="w-full p-4 rounded-xl border border-zinc-200 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -451,7 +463,7 @@ function Home() {
                             </li>
                             <li>Try a reputable VPN to improve download speeds.</li>
                             <li>Use a download manager (e.g., IDM) to stabilize downloads.</li>
-                            <li>Using a TeraBox premium account link may provide faster speeds.</li>
+                            <li>Using a premium account link may provide faster speeds.</li>
                           </ul>
                         </div>
                         <div className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-600 rounded-lg p-3">
@@ -459,7 +471,7 @@ function Home() {
                           <ul className="space-y-1 list-disc list-inside ml-2">
                             <li>Try a faster network or VPN to improve speeds.</li>
                             <li>Use a download manager (e.g., IDM) for stable downloads.</li>
-                            <li>Premium TeraBox accounts offer faster download speeds.</li>
+                            <li>Premium accounts offer faster download speeds.</li>
                             <li>Clear browser cache if downloads are slow.</li>
                           </ul>
                         </div>
