@@ -1,108 +1,129 @@
 import { useState } from "react";
 import { Download, FileText, Loader2, AlertCircle, CheckCircle, ExternalLink, Play, Eye, MonitorPlay } from "lucide-react";
 import InfoSection from "./infosection";
-import Header from "./components/Header";
-import Footer from "./Footer";
+import Header from "./components/header";
+import Footer from "./footer";
 
 const BACKEND_URL = "https://raspy-wave-5e61.sonukalakhari76.workers.dev";
 
-interface FileDetails {
-  file_name: string;
-  file_size: string;
-  download_link: string;
-  proxy_url?: string;
-  thumbnail?: string;
-}
+function Home() {
+  const [link, setLink] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [fileData, setFileData] = useState(null);
+  const [error, setError] = useState("");
+  const [debugInfo, setDebugInfo] = useState("");
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const [isVideoBuffering, setIsVideoBuffering] = useState(false);
 
-const Home: React.FC = () => {
-  const [shareLink, setShareLink] = useState<string>("");
-  const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [fileDetails, setFileDetails] = useState<FileDetails | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  const [showVideoPlayer, setShowVideoPlayer] = useState<boolean>(false);
-  const [hasVideoError, setHasVideoError] = useState<boolean>(false);
-  const [isVideoLoading, setIsVideoLoading] = useState<boolean>(false);
+  const handleFetch = async (retryCount = 3) => {
+  console.log("handleFetch triggered with link:", link);
 
-  const supportedDomains: string[] = [
-    "terabox.com",
-    "terabox.app",
-    "teraboxapp.com",
-    "terabox.fun",
-    "1024tera.com",
-    "4funbox.com",
-    "4funbox.co",
-    "mirrobox.com",
-    "nephobox.com",
-    "freeterabox.com",
-    "momerybox.com",
-    "tibibox.com",
-  ];
+  if (!link.trim()) {
+    setError("Please paste a TeraBox link.");
+    console.log("Error: Empty link");
+    return;
+  }
 
-  const normalizeUrl = (url: string): string =>
-    url
-      .toLowerCase()
-      .replace(/^https?:\/\//, "")
-      .replace(/^www\./, "")
-      .replace(/\/+$/, "")
-      .trim();
+  if (
+    !link.includes("terabox.com") &&
+    !link.includes("www.terabox.com") &&
+    !link.includes("teraboxapp.com") &&
+    !link.includes("www.teraboxapp.com") &&
+    !link.includes("teraboxshare.com") &&
+    !link.includes("www.teraboxshare.com") &&
+    !link.includes("1024tera.com") &&
+    !link.includes("www.1024tera.com") &&
+    !link.includes("1024tera.co") &&
+    !link.includes("www.1024tera.co") &&
+    !link.includes("pan.terabox.com") &&
+    !link.includes("pan.1024tera.com") &&
+    !link.includes("share.terabox.com") &&
+    !link.includes("share.1024tera.com")
+  ) {
+    setError("Please enter a valid TeraBox link.");
+    console.log("Error: Invalid link format");
+    return;
+  }
 
-  const isValidLink = (url: string): boolean =>
-    supportedDomains.some((domain) => normalizeUrl(url).includes(domain));
+  // continue with fetch logic here...
+};
 
-  const handleFetch = async (): Promise<void> => {
-    if (!shareLink.trim()) {
-      setErrorMessage("Please enter a share link.");
-      return;
-    }
+    setLoading(true);
+    setError("");
+    setFileData(null);
+    setDebugInfo("");
 
-    if (!isValidLink(shareLink)) {
-      setErrorMessage("Please enter a valid share link (e.g., https://www.terabox.com/s/xxxxxx or https://www.mirrobox.com/s/xxxxxx).");
-      return;
-    }
+    for (let attempt = 1; attempt <= retryCount; attempt++) {
+      try {
+        setDebugInfo(`Attempt ${attempt}: Sending request to backend...`);
+        console.log(`Attempt ${attempt}: Sending to ${BACKEND_URL} with link: ${link}`);
+        const res = await fetch(BACKEND_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ link: link.trim() }),
+        });
 
-    setIsProcessing(true);
-    setErrorMessage("");
-    setFileDetails(null);
+        setDebugInfo(`Attempt ${attempt}: Response status: ${res.status}`);
+        console.log(`Attempt ${attempt}: Status ${res.status}`);
 
-    try {
-      const response = await fetch(BACKEND_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ link: shareLink.trim() }),
-      });
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`HTTP error! status: ${res.status}, message: ${errorText}`);
+        }
 
-      if (!response.ok) {
-        setErrorMessage("Unable to fetch file. Please try again later.");
-        return;
+        const data = await res.json();
+        setDebugInfo(`Attempt ${attempt}: Response received successfully`);
+        console.log("Backend response:", data);
+
+        if (data.error) {
+          setError(data.error);
+          console.log("Backend error:", data.error);
+        } else {
+          setFileData(data);
+          setError("");
+          console.log("File data set:", data);
+          if (data.debug_info) {
+            setDebugInfo(prev => `${prev}\n${data.debug_info}`);
+          }
+          break;
+        }
+      } catch (e) {
+        console.error(`Attempt ${attempt} failed:`, e);
+        setDebugInfo(`Attempt ${attempt}: Error details: ${e.message}`);
+        if (attempt === retryCount) {
+          setError(`Connection failed after ${retryCount} attempts: ${e.message}`);
+          console.log("Final error:", e.message);
+        }
       }
-
-      const data = await response.json();
-
-      if (data.error || !data.file_name) {
-        setErrorMessage(
-          typeof data.error === "string" && !data.error.toLowerCase().includes("attempt")
-            ? data.error
-            : "Unable to fetch file. Please check the link and try again."
-        );
-      } else {
-        setFileDetails(data);
-      }
-    } catch {
-      setErrorMessage("Unable to fetch file. Please check the link or try again later.");
-    } finally {
-      setIsProcessing(false);
     }
+    setLoading(false);
+    console.log("Fetch complete, loading:", false);
   };
 
-  const handleDirectDownload = async (url: string, filename: string): Promise<void> => {
+  const handleDirectDownload = async (url, filename) => {
+    console.log("handleDirectDownload triggered for:", filename, "URL:", url);
     if (!url || !filename) {
-      setErrorMessage("Invalid download link or filename. Try 'Fast Download'.");
+      console.error("Invalid URL or filename:", { url, filename });
+      setError("Invalid download link or filename. Try 'Open Link'.");
       return;
     }
 
     try {
+      console.log("Pre-checking URL:", url);
       const response = await fetch(url, { method: "HEAD", mode: "cors" });
-      if (!response.ok) throw new Error("URL not accessible");
+      const headers = Object.fromEntries(response.headers);
+      console.log("HEAD response:", { status: response.status, headers });
+      setDebugInfo(prev => `${prev}\nDownload URL check: Status ${response.status}, Content-Type: ${headers['content-type'] || 'none'}, Content-Disposition: ${headers['content-disposition'] || 'none'}`);
+
+      if (!response.ok) {
+        throw new Error(`URL not accessible, status: ${response.status}`);
+      }
+
+      if (!headers['content-disposition']?.includes('attachment')) {
+        console.warn("Warning: Content-Disposition is not 'attachment'. Download may open in browser.");
+        setDebugInfo(prev => `${prev}\nWarning: Missing Content-Disposition: attachment`);
+      }
 
       const link = document.createElement("a");
       link.href = url;
@@ -110,24 +131,36 @@ const Home: React.FC = () => {
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       document.body.appendChild(link);
+      console.log("Attempting to trigger download for:", url);
       link.click();
       document.body.removeChild(link);
+      console.log("Download triggered successfully");
 
-      setTimeout(() => window.open(url, "_blank"), 3000);
-    } catch {
-      setErrorMessage("Failed to start download. Opening link as fallback...");
+      setTimeout(() => {
+        console.log("Checking if download started...");
+        window.open(url, "_blank");
+        console.log("Fallback: Opened URL in new tab:", url);
+        setDebugInfo(prev => `${prev}\nTriggered fallback: Opened URL in new tab`);
+      }, 3000);
+    } catch (e) {
+      console.error("Direct download failed:", e);
+      setError(`Failed to start download: ${e.message}. Opening link as fallback...`);
+      setDebugInfo(prev => `${prev}\nDownload failed: ${e.message}`);
       window.open(url, "_blank");
+      console.log("Fallback: Opened URL in new tab:", url);
     }
   };
 
-  const handleOnlineWatch = async (proxyUrl: string, filename: string): Promise<void> => {
+  const handleOnlineWatch = async (proxyUrl, filename) => {
+    console.log("handleOnlineWatch triggered for:", filename);
     try {
       const response = await fetch(proxyUrl, { method: "HEAD" });
-      if (response.ok && isVideoFile(filename)) {
-        const videoWindow = window.open("", "_blank", "width=800,height=600");
-        videoWindow?.document.write(`
-          <!DOCTYPE html>
-          <html>
+      if (response.ok) {
+        if (isVideoFile(filename)) {
+          const videoWindow = window.open("", "_blank", "width=800,height=600");
+          videoWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
             <head>
               <title>${filename}</title>
               <style>
@@ -154,91 +187,109 @@ const Home: React.FC = () => {
                 video.onerror = () => { loading.style.display = 'none'; };
               </script>
             </body>
-          </html>
-        `);
+            </html>
+          `);
+        } else {
+          window.open(proxyUrl, "_blank");
+        }
       } else {
-        window.open(proxyUrl, "_blank");
+        throw new Error("URL not accessible");
       }
-    } catch {
+    } catch (error) {
+      console.log("Direct URL access failed, trying fallback...", error);
       window.open(proxyUrl, "_blank");
     }
   };
 
-  const toggleVideoPlayer = (): void => {
+  const toggleVideoPlayer = () => {
+    console.log("Toggling video player, current state:", showVideoPlayer);
     setShowVideoPlayer(!showVideoPlayer);
-    setHasVideoError(false);
-    setIsVideoLoading(true);
+    setVideoError(false);
+    setIsVideoBuffering(true);
   };
 
-  const handleVideoError = (): void => {
-    setHasVideoError(true);
-    setIsVideoLoading(false);
-    setErrorMessage("Video preview failed. Try 'Watch Online' or 'Direct Download'.");
-  };
-
-  const isVideoFile = (filename: string): boolean =>
-    [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".3gp"].some((ext) =>
-      filename.toLowerCase().endsWith(ext)
+  const handleVideoError = (e) => {
+    console.error("Video playback error:", e);
+    setVideoError(true);
+    setIsVideoBuffering(false);
+    setError(
+      `Video preview failed (Error: ${e.target.error?.message || "Unknown"}). Try using "Watch Online" or "Direct Download".`
     );
-
-  const isImageFile = (filename: string): boolean =>
-    [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"].some((ext) => filename.toLowerCase().endsWith(ext));
-
-  const reset = (): void => {
-    setShareLink("");
-    setFileDetails(null);
-    setErrorMessage("");
-    setShowVideoPlayer(false);
-    setHasVideoError(false);
-    setIsVideoLoading(false);
   };
 
-  const getVideoPreviewUrl = (url: string, filename: string): string =>
-    `${BACKEND_URL}/proxy?url=${encodeURIComponent(url)}&file_name=${encodeURIComponent(filename)}`;
+  const isVideoFile = (filename) => {
+    const videoExtensions = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".3gp"];
+    return videoExtensions.some((ext) => filename.toLowerCase().includes(ext));
+  };
+
+  const isImageFile = (filename) => {
+    const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"];
+    return imageExtensions.some((ext) => filename.toLowerCase().includes(ext));
+  };
+
+  const reset = () => {
+    console.log("Resetting state");
+    setLink("");
+    setFileData(null);
+    setError("");
+    setDebugInfo("");
+    setShowVideoPlayer(false);
+    setVideoError(false);
+    setIsVideoBuffering(false);
+  };
+
+  const getVideoPreviewUrl = (url, filename) => {
+    const previewUrl = `${BACKEND_URL}/proxy?url=${encodeURIComponent(url)}&file_name=${encodeURIComponent(filename)}`;
+    console.log("Generated video preview URL:", previewUrl);
+    return previewUrl;
+  };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50 dark:bg-zinc-900">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-zinc-900">
       <Header />
       <main className="flex-grow pt-16">
         <div className="container mx-auto px-4 py-8">
-          <div className="mx-auto max-w-2xl">
-            <div className="mb-8 text-center">
-              <h1 className="mb-2 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-4xl font-bold text-transparent">
-                File Downloader
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                TeraBox Downloader
               </h1>
-              <p className="text-zinc-600 dark:text-zinc-400">Download files from supported platforms with ease</p>
+              <p className="text-zinc-600 dark:text-zinc-400">Download files from TeraBox with ease</p>
             </div>
 
-            <div className="mb-6 rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-800">
-              {!fileDetails ? (
+            <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-xl p-6 mb-6">
+              {!fileData ? (
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="shareLink" className="mb-2 block text-sm font-medium">
-                      Share Link
+                    <label htmlFor="link" className="block text-sm font-medium mb-2">
+                      TeraBox Share Link
                     </label>
                     <input
-                      id="shareLink"
+                      id="link"
                       type="text"
-                      placeholder="e.g., https://www.terabox.com/s/xxxxxx or https://www.mirrobox.com/s/xxxxxx"
-                      value={shareLink}
-                      onChange={(e) => setShareLink(e.target.value)}
-                      className="w-full rounded-xl border border-zinc-200 bg-zinc-50 p-4 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-700"
-                      disabled={isProcessing}
+                      placeholder="https://terabox.app/s/xxxxxx"
+                      value={link}
+                      onChange={(e) => setLink(e.target.value)}
+                      className="w-full p-4 rounded-xl border border-zinc-200 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      disabled={loading}
                     />
                   </div>
                   <button
-                    onClick={handleFetch}
-                    disabled={isProcessing || !shareLink.trim()}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-4 font-medium text-white transition-all hover:bg-blue-700 disabled:bg-zinc-400"
+                    onClick={() => {
+                      console.log("Get Download Link button clicked");
+                      handleFetch();
+                    }}
+                    disabled={loading || !link.trim()}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-400 text-white px-6 py-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2"
                   >
-                    {isProcessing ? (
+                    {loading ? (
                       <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <Loader2 className="w-5 h-5 animate-spin" />
                         Processing...
                       </>
                     ) : (
                       <>
-                        <Download className="h-5 w-5" />
+                        <Download className="w-5 h-5" />
                         Get Download Link
                       </>
                     )}
@@ -246,138 +297,130 @@ const Home: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                    <span className="font-medium text-green-700 dark:text-green-300">
+                  <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                    <span className="text-green-700 dark:text-green-300 font-medium">
                       File information retrieved successfully!
                     </span>
                   </div>
 
-                  <div className="rounded-xl bg-zinc-50 p-4 dark:bg-zinc-700">
+                  <div className="bg-zinc-50 dark:bg-zinc-700 rounded-xl p-4">
                     <div className="space-y-4">
                       <div className="flex items-start gap-4">
                         <div className="flex-shrink-0">
-                          {isVideoFile(fileDetails.file_name) ? (
-                            <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
-                              <Play className="h-8 w-8 text-blue-600" />
+                          {isVideoFile(fileData.file_name) ? (
+                            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                              <Play className="w-8 h-8 text-blue-600" />
                             </div>
-                          ) : fileDetails.thumbnail ? (
+                          ) : fileData.thumbnail ? (
                             <img
-                              src={fileDetails.thumbnail}
+                              src={fileData.thumbnail}
                               alt="Thumbnail"
-                              className="h-16 w-16 rounded-lg object-cover"
+                              className="w-16 h-16 rounded-lg object-cover"
                               onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                                if (e.currentTarget.nextElementSibling)
-                                  e.currentTarget.nextElementSibling.style.display = "flex";
+                                e.target.style.display = "none";
+                                e.target.nextSibling.style.display = "flex";
                               }}
                             />
-                          ) : (
-                            <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-zinc-200 dark:bg-zinc-600">
-                              <FileText className="h-8 w-8 text-zinc-500" />
-                            </div>
-                          )}
+                          ) : null}
+                          <div
+                            className="w-16 h-16 bg-zinc-200 dark:bg-zinc-600 rounded-lg flex items-center justify-center"
+                            style={{ display: fileData.thumbnail ? "none" : "flex" }}
+                          >
+                            <FileText className="w-8 h-8 text-zinc-500" />
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="mb-2 flex items-center gap-2 break-all text-lg font-semibold">
-                            <FileText className="h-5 w-5 flex-shrink-0" />
-                            {fileDetails.file_name}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-lg mb-2 flex items-center gap-2 break-all">
+                            <FileText className="w-5 h-5 flex-shrink-0" />
+                            {fileData.file_name}
                           </h3>
                           <div className="flex flex-wrap gap-4 text-sm text-zinc-600 dark:text-zinc-400">
-                            <span>Size: {fileDetails.file_size}</span>
-                            <span className="rounded-full bg-blue-100 px-2 py-1 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
-                              {isVideoFile(fileDetails.file_name)
-                                ? "Video"
-                                : isImageFile(fileDetails.file_name)
-                                ? "Image"
-                                : "File"}
+                            <span>Size: {fileData.file_size}</span>
+                            <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full">
+                              {isVideoFile(fileData.file_name) ? "Video" : isImageFile(fileData.file_name) ? "Image" : "File"}
                             </span>
                           </div>
                         </div>
                       </div>
 
-                      {fileDetails?.file_name && isVideoFile(fileDetails.file_name) && (
-                        <div className="relative w-full">
+                      {fileData?.file_name && isVideoFile(fileData.file_name) && (
+                        <div className="w-full relative">
                           {!showVideoPlayer ? (
                             <div
-                              className="group relative cursor-pointer overflow-hidden rounded-xl bg-gradient-to-br from-blue-900 to-purple-900"
+                              className="bg-gradient-to-br from-blue-900 to-purple-900 rounded-xl overflow-hidden relative cursor-pointer group"
                               onClick={toggleVideoPlayer}
                             >
-                              <div className="relative flex aspect-video items-center justify-center">
-                                {fileDetails.thumbnail ? (
+                              <div className="aspect-video flex items-center justify-center relative">
+                                {fileData.thumbnail ? (
                                   <img
-                                    src={fileDetails.thumbnail}
+                                    src={fileData.thumbnail}
                                     alt="Video thumbnail"
-                                    className="h-full w-full object-cover opacity-60"
+                                    className="w-full h-full object-cover opacity-60"
                                     onError={(e) => {
-                                      e.currentTarget.style.display = "none";
+                                      e.target.style.display = "none";
                                     }}
                                   />
                                 ) : (
-                                  <div className="h-full w-full bg-gradient-to-br from-blue-800 to-purple-800" />
+                                  <div className="w-full h-full bg-gradient-to-br from-blue-800 to-purple-800"></div>
                                 )}
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                  <div className="rounded-full bg-white bg-opacity-20 p-6 backdrop-blur-sm transition-all group-hover:bg-opacity-30">
-                                    <Play className="ml-2 h-16 w-16 text-white" />
+                                  <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-full p-6 group-hover:bg-opacity-30 transition-all">
+                                    <Play className="w-16 h-16 text-white ml-2" />
                                   </div>
                                 </div>
                                 <div className="absolute bottom-4 left-4 right-4">
-                                  <div className="rounded-lg bg-black bg-opacity-50 p-3 backdrop-blur-sm">
-                                    <p className="font-medium text-white">Click to preview video</p>
-                                    <p className="text-sm text-gray-300">Built-in video player</p>
+                                  <div className="bg-black bg-opacity-50 backdrop-blur-sm rounded-lg p-3">
+                                    <p className="text-white font-medium">Click to preview video</p>
+                                    <p className="text-gray-300 text-sm">Built-in video player</p>
                                   </div>
                                 </div>
                               </div>
                             </div>
                           ) : (
-                            <div className="overflow-hidden rounded-xl bg-black">
-                              {!hasVideoError ? (
+                            <div className="bg-black rounded-xl overflow-hidden">
+                              {!videoError ? (
                                 <div className="relative">
                                   <video
                                     controls
                                     preload="auto"
-                                    className="max-h-96 w-full object-contain"
-                                    poster={fileDetails.thumbnail}
+                                    className="w-full max-h-96 object-contain"
+                                    poster={fileData.thumbnail}
                                     onError={handleVideoError}
-                                    onLoadStart={() => setIsVideoLoading(true)}
-                                    onCanPlay={() => setIsVideoLoading(false)}
+                                    onLoadStart={() => setIsVideoBuffering(true)}
+                                    onCanPlay={() => setIsVideoBuffering(false)}
                                   >
                                     <source
-                                      src={getVideoPreviewUrl(fileDetails.download_link, fileDetails.file_name)}
+                                      src={getVideoPreviewUrl(fileData.download_link, fileData.file_name)}
                                       type="video/mp4"
                                     />
                                     Your browser does not support the video tag.
                                   </video>
-                                  {isVideoLoading && (
+                                  {isVideoBuffering && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                                      <Loader2 className="h-8 w-8 animate-spin text-white" />
+                                      <Loader2 className="w-8 h-8 animate-spin text-white" />
                                     </div>
                                   )}
                                 </div>
                               ) : (
-                                <div className="flex aspect-video items-center justify-center bg-zinc-800 text-white">
-                                  <div className="p-6 text-center">
-                                    <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-400" />
+                                <div className="aspect-video flex items-center justify-center bg-zinc-800 text-white">
+                                  <div className="text-center p-6">
+                                    <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
                                     <p className="text-lg font-medium">Preview Not Available</p>
-                                    <p className="mb-4 text-sm text-zinc-400">This video cannot be previewed directly</p>
+                                    <p className="text-sm text-zinc-400 mb-4">This video cannot be previewed directly</p>
                                     <button
-                                      onClick={() =>
-                                        handleOnlineWatch(
-                                          fileDetails.proxy_url || fileDetails.download_link,
-                                          fileDetails.file_name
-                                        )
-                                      }
-                                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition-colors hover:bg-blue-700"
+                                      onClick={() => handleOnlineWatch(fileData.proxy_url, fileData.file_name)}
+                                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
                                     >
                                       Try Watch Online Instead
                                     </button>
                                   </div>
                                 </div>
                               )}
-                              <div className="bg-zinc-800 p-3">
+                              <div className="p-3 bg-zinc-800">
                                 <button
                                   onClick={toggleVideoPlayer}
-                                  className="text-sm text-white transition-colors hover:text-blue-400"
+                                  className="text-white text-sm hover:text-blue-400 transition-colors"
                                 >
                                   ← Back to file info
                                 </button>
@@ -387,149 +430,137 @@ const Home: React.FC = () => {
                         </div>
                       )}
 
-                      {fileDetails?.file_name && isImageFile(fileDetails.file_name) && fileDetails.thumbnail && (
+                      {fileData?.file_name && isImageFile(fileData.file_name) && fileData.thumbnail && (
                         <div className="w-full">
                           <img
-                            src={fileDetails.thumbnail}
-                            alt={fileDetails.file_name}
-                            className="max-h-80 w-full rounded-xl border border-zinc-200 object-contain dark:border-zinc-600"
+                            src={fileData.thumbnail}
+                            alt={fileData.file_name}
+                            className="w-full max-h-80 object-contain rounded-xl border border-zinc-200 dark:border-zinc-600"
                             onError={(e) => {
-                              e.currentTarget.src = fileDetails.download_link;
+                              e.target.src = fileData.download_link;
                             }}
                           />
                         </div>
                       )}
 
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Available Actions:</h4>
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          {fileDetails?.file_name && isVideoFile(fileDetails.file_name) && (
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-sm text-zinc-700 dark:text-zinc-300">Available Actions:</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {fileData?.file_name && isVideoFile(fileData.file_name) && (
                             <button
-                              onClick={() =>
-                                handleOnlineWatch(fileDetails.proxy_url || fileDetails.download_link, fileDetails.file_name)
-                              }
-                              className="flex items-center justify-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-purple-700"
+                              onClick={() => handleOnlineWatch(fileData.proxy_url, fileData.file_name)}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
                             >
-                              <MonitorPlay className="h-4 w-4" />
+                              <MonitorPlay className="w-4 h-4" />
                               Watch Online
                             </button>
                           )}
                           <button
-                            onClick={() =>
-                              handleDirectDownload(fileDetails.proxy_url || fileDetails.download_link, fileDetails.file_name)
-                            }
-                            className="flex items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-green-700"
+                            onClick={() => handleDirectDownload(fileData.proxy_url || fileData.download_link, fileData.file_name)}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
                           >
-                            <Download className="h-4 w-4" />
-                            Direct Download
+                            <Download className="w-4 h-4" />
+                            Direct Download (Proxy Fallback)
                           </button>
-                          {fileDetails?.file_name && isImageFile(fileDetails.file_name) && (
+                          {fileData?.file_name && isImageFile(fileData.file_name) && (
                             <button
-                              onClick={() => handleOnlineWatch(fileDetails.download_link, fileDetails.file_name)}
-                              className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-blue-700"
+                              onClick={() => handleOnlineWatch(fileData.download_link, fileData.file_name)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
                             >
-                              <Eye className="h-4 w-4" />
+                              <Eye className="w-4 h-4" />
                               View in Browser
                             </button>
                           )}
-                          <div className="flex flex-row items-center gap-3">
-                            <a
-                              href={fileDetails.download_link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-zinc-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-zinc-700"
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                              Fast Download
-                            </a>
-                            <button
-                              onClick={reset}
-                              className="flex flex-1 items-center justify-center rounded-lg bg-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition-all hover:bg-zinc-300 dark:bg-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-500"
-                            >
-                              Download Another File
-                            </button>
-                          </div>
+                          <a
+                            href={fileData.download_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-zinc-600 hover:bg-zinc-700 text-white px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            Open Link
+                          </a>
                         </div>
-                        <div className="rounded-lg bg-zinc-100 p-3 text-xs text-zinc-500 dark:bg-zinc-600 dark:text-zinc-400">
-                          <p className="mb-1 font-medium">💡 Usage Tips:</p>
-                          <ul className="ml-2 list-inside list-disc space-y-1">
-                            {fileDetails?.file_name && isVideoFile(fileDetails.file_name) && (
-                              <li>
-                                <strong>Watch Online:</strong> Stream video directly in new tab
-                              </li>
-                            )}
-                            <li>
-                              <strong>Direct Download:</strong> Fastest way to download file
-                            </li>
-                            {fileDetails?.file_name && isImageFile(fileDetails.file_name) && (
-                              <li>
-                                <strong>View in Browser:</strong> See full-size image online
-                              </li>
-                            )}
-                            <li>
-                              <strong>Fast Download:</strong> Opens file in a new tab for quick download
-                            </li>
-                            <li>Try a reputable VPN to improve download speeds</li>
-                            <li>Use a download manager (e.g., IDM) for stability</li>
-                            <li>Premium account links may provide faster speeds</li>
+                        <div className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-600 rounded-lg p-3">
+                          <p className="font-medium mb-1">💡 Usage Tips:</p>
+                          <ul className="space-y-1 list-disc list-inside ml-2">
+                            {fileData?.file_name && isVideoFile(fileData.file_name) && <li><strong>Watch Online:</strong> Stream video directly in new tab</li>}
+                            <li><strong>Direct Download:</strong> Fastest way to download file</li>
+                            {fileData?.file_name && isImageFile(fileData.file_name) && <li><strong>View in Browser:</strong> See full-size image online</li>}
+                            <li>Try a reputable VPN to improve download speeds.</li>
+                            <li>Use a download manager (e.g., IDM) to stabilize downloads.</li>
+                            <li>Using a TeraBox premium account link may provide faster speeds.</li>
                           </ul>
                         </div>
-                        <div className="rounded-lg bg-zinc-100 p-3 text-xs text-zinc-500 dark:bg-zinc-600 dark:text-zinc-400">
-                          <p className="mb-1 font-medium">💡 Slow Download Tips:</p>
-                          <ul className="ml-2 list-inside list-disc space-y-1">
-                            <li>Try a faster network or VPN to improve speeds</li>
-                            <li>Use a download manager (e.g., IDM) for stable downloads</li>
-                            <li>Premium accounts offer faster download speeds</li>
-                            <li>Clear browser cache if downloads are slow</li>
+                        <div className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-600 rounded-lg p-3">
+                          <p className="font-medium mb-1">💡 Slow Download Tips:</p>
+                          <ul className="space-y-1 list-disc list-inside ml-2">
+                            <li>Try a faster network or VPN to improve speeds.</li>
+                            <li>Use a download manager (e.g., IDM) for stable downloads.</li>
+                            <li>Premium TeraBox accounts offer faster download speeds.</li>
+                            <li>Clear browser cache if downloads are slow.</li>
                           </ul>
                         </div>
                       </div>
+
+                      <button
+                        onClick={reset}
+                        className="w-full bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-600 dark:hover:bg-zinc-500 text-zinc-700 dark:text-zinc-200 px-4 py-2 rounded-xl font-medium transition-all"
+                      >
+                        Download Another File
+                      </button>
                     </div>
                   </div>
                 </div>
               )}
 
-              {errorMessage && (
-                <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+              {error && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6">
                   <div className="flex items-center gap-3">
-                    <AlertCircle className="h-6 w-6 text-red-600" />
+                    <AlertCircle className="w-6 h-6 text-red-600" />
                     <div>
-                      <p className="font-medium text-red-700 dark:text-red-300">Error</p>
-                      <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
-                      <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-                        💡 Ensure the link is public (e.g., https://www.terabox.com/s/xxxxxx or https://www.mirrobox.com/s/xxxxxx), try a VPN, or clear browser cache.
-                      </p>
+                      <p className="text-red-700 dark:text-red-300 font-medium">Error</p>
+                      <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                      {error.includes("Connection failed") && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                          💡 Try clearing your browser cache or restarting your browser to improve download speed.
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
               )}
 
-              <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-6 dark:border-blue-800 dark:bg-blue-900/20">
-                <h3 className="mb-3 font-semibold">How to use:</h3>
+              {debugInfo && (
+                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4 mb-6">
+                  <h4 className="font-medium mb-2">Debug Information:</h4>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 font-mono">{debugInfo}</p>
+                  {debugInfo.includes("response time") && (
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
+                      💡 Slow response detected? Try a VPN, download manager, or TeraBox premium account for better speeds.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 mb-6">
+                <h3 className="font-semibold mb-3">How to use:</h3>
                 <ol className="space-y-2 text-sm">
                   <li className="flex gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
-                      1
-                    </span>
-                    Copy a public share link from a supported platform
+                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">1</span>
+                    Copy a TeraBox share link
                   </li>
                   <li className="flex gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
-                      2
-                    </span>
+                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">2</span>
                     Paste it in the input field above
                   </li>
                   <li className="flex gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
-                      3
-                    </span>
+                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">3</span>
                     Click "Get Download Link" and wait for processing
                   </li>
                   <li className="flex gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
-                      4
-                    </span>
-                    Click "Direct Download" or "Fast Download" to start downloading
+                    <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">4</span>
+                    Click "Direct Download" to start downloading
                   </li>
                 </ol>
               </div>
@@ -542,6 +573,6 @@ const Home: React.FC = () => {
       <Footer />
     </div>
   );
-};
+}
 
 export default Home;
