@@ -17,37 +17,17 @@ function Home() {
   const [isVideoBuffering, setIsVideoBuffering] = useState(false);
 
   const handleFetch = async (retryCount = 3) => {
-  console.log("handleFetch triggered with link:", link);
-
-  if (!link.trim()) {
-    setError("Please paste a TeraBox link.");
-    console.log("Error: Empty link");
-    return;
-  }
-
-  if (
-    !link.includes("terabox.com") &&
-    !link.includes("www.terabox.com") &&
-    !link.includes("teraboxapp.com") &&
-    !link.includes("www.teraboxapp.com") &&
-    !link.includes("teraboxshare.com") &&
-    !link.includes("www.teraboxshare.com") &&
-    !link.includes("1024tera.com") &&
-    !link.includes("www.1024tera.com") &&
-    !link.includes("1024tera.co") &&
-    !link.includes("www.1024tera.co") &&
-    !link.includes("pan.terabox.com") &&
-    !link.includes("pan.1024tera.com") &&
-    !link.includes("share.terabox.com") &&
-    !link.includes("share.1024tera.com")
-  ) {
-    setError("Please enter a valid TeraBox link.");
-    console.log("Error: Invalid link format");
-    return;
-  }
-
-  // continue with fetch logic here...
-};
+    console.log("handleFetch triggered with link:", link);
+    if (!link.trim()) {
+      setError("Please paste a TeraBox link.");
+      console.log("Error: Empty link");
+      return;
+    }
+    if (!link.includes("terabox") && !link.includes("1024tera")) {
+      setError("Please enter a valid TeraBox link.");
+      console.log("Error: Invalid link format");
+      return;
+    }
 
     setLoading(true);
     setError("");
