@@ -11,41 +11,51 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [fileData, setFileData] = useState(null);
   const [error, setError] = useState("");
-  const [debugInfo, setDebugInfo] = useState("");
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [isVideoBuffering, setIsVideoBuffering] = useState(false);
 
+  const supportedDomains = [
+    "terabox.com",
+    "terabox.app",
+    "teraboxapp.com",
+    "terabox.fun",
+    "1024tera.com",
+    "4funbox.com",
+    "4funbox.co",
+    "mirrobox.com",
+    "nephobox.com",
+    "freeterabox.com",
+    "momerybox.com",
+    "tibibox.com",
+  ];
+
   const handleFetch = async (retryCount = 3) => {
-    console.log("handleFetch triggered with link:", link);
     if (!link.trim()) {
       setError("Please paste a TeraBox link.");
-      console.log("Error: Empty link");
       return;
     }
-    if (!link.includes("terabox") && !link.includes("1024tera")) {
-      setError("Please enter a valid TeraBox link.");
-      console.log("Error: Invalid link format");
+
+    const isValidDomain = supportedDomains.some((domain) =>
+      link.toLowerCase().includes(domain)
+    );
+
+    if (!isValidDomain) {
+      setError("Please enter a valid link from a supported domain.");
       return;
     }
 
     setLoading(true);
     setError("");
     setFileData(null);
-    setDebugInfo("");
 
     for (let attempt = 1; attempt <= retryCount; attempt++) {
       try {
-        setDebugInfo(`Attempt ${attempt}: Sending request to backend...`);
-        console.log(`Attempt ${attempt}: Sending to ${BACKEND_URL} with link: ${link}`);
         const res = await fetch(BACKEND_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ link: link.trim() }),
         });
-
-        setDebugInfo(`Attempt ${attempt}: Response status: ${res.status}`);
-        console.log(`Attempt ${attempt}: Status ${res.status}`);
 
         if (!res.ok) {
           const errorText = await res.text();
@@ -53,56 +63,33 @@ function Home() {
         }
 
         const data = await res.json();
-        setDebugInfo(`Attempt ${attempt}: Response received successfully`);
-        console.log("Backend response:", data);
 
         if (data.error) {
           setError(data.error);
-          console.log("Backend error:", data.error);
         } else {
           setFileData(data);
           setError("");
-          console.log("File data set:", data);
-          if (data.debug_info) {
-            setDebugInfo(prev => `${prev}\n${data.debug_info}`);
-          }
           break;
         }
       } catch (e) {
-        console.error(`Attempt ${attempt} failed:`, e);
-        setDebugInfo(`Attempt ${attempt}: Error details: ${e.message}`);
         if (attempt === retryCount) {
           setError(`Connection failed after ${retryCount} attempts: ${e.message}`);
-          console.log("Final error:", e.message);
         }
       }
     }
     setLoading(false);
-    console.log("Fetch complete, loading:", false);
   };
 
   const handleDirectDownload = async (url, filename) => {
-    console.log("handleDirectDownload triggered for:", filename, "URL:", url);
     if (!url || !filename) {
-      console.error("Invalid URL or filename:", { url, filename });
       setError("Invalid download link or filename. Try 'Open Link'.");
       return;
     }
 
     try {
-      console.log("Pre-checking URL:", url);
       const response = await fetch(url, { method: "HEAD", mode: "cors" });
-      const headers = Object.fromEntries(response.headers);
-      console.log("HEAD response:", { status: response.status, headers });
-      setDebugInfo(prev => `${prev}\nDownload URL check: Status ${response.status}, Content-Type: ${headers['content-type'] || 'none'}, Content-Disposition: ${headers['content-disposition'] || 'none'}`);
-
       if (!response.ok) {
         throw new Error(`URL not accessible, status: ${response.status}`);
-      }
-
-      if (!headers['content-disposition']?.includes('attachment')) {
-        console.warn("Warning: Content-Disposition is not 'attachment'. Download may open in browser.");
-        setDebugInfo(prev => `${prev}\nWarning: Missing Content-Disposition: attachment`);
       }
 
       const link = document.createElement("a");
@@ -111,28 +98,19 @@ function Home() {
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       document.body.appendChild(link);
-      console.log("Attempting to trigger download for:", url);
       link.click();
       document.body.removeChild(link);
-      console.log("Download triggered successfully");
 
       setTimeout(() => {
-        console.log("Checking if download started...");
         window.open(url, "_blank");
-        console.log("Fallback: Opened URL in new tab:", url);
-        setDebugInfo(prev => `${prev}\nTriggered fallback: Opened URL in new tab`);
       }, 3000);
     } catch (e) {
-      console.error("Direct download failed:", e);
       setError(`Failed to start download: ${e.message}. Opening link as fallback...`);
-      setDebugInfo(prev => `${prev}\nDownload failed: ${e.message}`);
       window.open(url, "_blank");
-      console.log("Fallback: Opened URL in new tab:", url);
     }
   };
 
   const handleOnlineWatch = async (proxyUrl, filename) => {
-    console.log("handleOnlineWatch triggered for:", filename);
     try {
       const response = await fetch(proxyUrl, { method: "HEAD" });
       if (response.ok) {
@@ -176,20 +154,17 @@ function Home() {
         throw new Error("URL not accessible");
       }
     } catch (error) {
-      console.log("Direct URL access failed, trying fallback...", error);
       window.open(proxyUrl, "_blank");
     }
   };
 
   const toggleVideoPlayer = () => {
-    console.log("Toggling video player, current state:", showVideoPlayer);
     setShowVideoPlayer(!showVideoPlayer);
     setVideoError(false);
     setIsVideoBuffering(true);
   };
 
   const handleVideoError = (e) => {
-    console.error("Video playback error:", e);
     setVideoError(true);
     setIsVideoBuffering(false);
     setError(
@@ -208,20 +183,16 @@ function Home() {
   };
 
   const reset = () => {
-    console.log("Resetting state");
     setLink("");
     setFileData(null);
     setError("");
-    setDebugInfo("");
     setShowVideoPlayer(false);
     setVideoError(false);
     setIsVideoBuffering(false);
   };
 
   const getVideoPreviewUrl = (url, filename) => {
-    const previewUrl = `${BACKEND_URL}/proxy?url=${encodeURIComponent(url)}&file_name=${encodeURIComponent(filename)}`;
-    console.log("Generated video preview URL:", previewUrl);
-    return previewUrl;
+    return `${BACKEND_URL}/proxy?url=${encodeURIComponent(url)}&file_name=${encodeURIComponent(filename)}`;
   };
 
   return (
@@ -247,7 +218,7 @@ function Home() {
                     <input
                       id="link"
                       type="text"
-                      placeholder="https://terabox.app/s/xxxxxx"
+                      placeholder="Paste your share link here"
                       value={link}
                       onChange={(e) => setLink(e.target.value)}
                       className="w-full p-4 rounded-xl border border-zinc-200 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -255,10 +226,7 @@ function Home() {
                     />
                   </div>
                   <button
-                    onClick={() => {
-                      console.log("Get Download Link button clicked");
-                      handleFetch();
-                    }}
+                    onClick={handleFetch}
                     disabled={loading || !link.trim()}
                     className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-400 text-white px-6 py-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2"
                   >
@@ -458,15 +426,29 @@ function Home() {
                             className="bg-zinc-600 hover:bg-zinc-700 text-white px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
                           >
                             <ExternalLink className="w-4 h-4" />
-                            Fast Download 
+                            Fast Download
                           </a>
                         </div>
                         <div className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-600 rounded-lg p-3">
                           <p className="font-medium mb-1">💡 Usage Tips:</p>
                           <ul className="space-y-1 list-disc list-inside ml-2">
-                            {fileData?.file_name && isVideoFile(fileData.file_name) && <li><strong>Watch Online:</strong> Stream video directly in new tab</li>}
-                            <li><strong>Direct Download:</strong> Fastest way to download file</li>
-                            {fileData?.file_name && isImageFile(fileData.file_name) && <li><strong>View in Browser:</strong> See full-size image online</li>}
+                            {fileData?.file_name && isVideoFile(fileData.file_name) && (
+                              <li>
+                                <strong>Watch Online:</strong> Stream video directly in new tab
+                              </li>
+                            )}
+                            <li>
+                              <strong>Direct Download:</strong> Fastest way to download file
+                            </li>
+                            {fileData?.file_name && isImageFile(fileData.file_name) && (
+                              <li>
+                                <strong>View in Browser:</strong> See full-size image online
+                              </li>
+                            )}
+                            <li>
+                              <strong>Fast Download:</strong> Opens file in a new tab for quick
+                              download. Click "Download Another File" to start over.
+                            </li>
                             <li>Try a reputable VPN to improve download speeds.</li>
                             <li>Use a download manager (e.g., IDM) to stabilize downloads.</li>
                             <li>Using a TeraBox premium account link may provide faster speeds.</li>
@@ -511,24 +493,12 @@ function Home() {
                 </div>
               )}
 
-              {debugInfo && (
-                <div className="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-4 mb-6">
-                  <h4 className="font-medium mb-2">Debug Information:</h4>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400 font-mono">{debugInfo}</p>
-                  {debugInfo.includes("response time") && (
-                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">
-                      💡 Slow response detected? Try a VPN, download manager, or TeraBox premium account for better speeds.
-                    </p>
-                  )}
-                </div>
-              )}
-
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 mb-6">
                 <h3 className="font-semibold mb-3">How to use:</h3>
                 <ol className="space-y-2 text-sm">
                   <li className="flex gap-2">
                     <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">1</span>
-                    Copy a TeraBox share link
+                    Copy a share link from a supported platform
                   </li>
                   <li className="flex gap-2">
                     <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">2</span>
@@ -540,7 +510,7 @@ function Home() {
                   </li>
                   <li className="flex gap-2">
                     <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">4</span>
-                    Click "Direct Download" to start downloading
+                    Click "Direct Download" or "Fast Download" to start downloading
                   </li>
                 </ol>
               </div>
