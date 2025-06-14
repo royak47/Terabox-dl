@@ -458,7 +458,7 @@ function Home() {
                             className="bg-zinc-600 hover:bg-zinc-700 text-white px-4 py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
                           >
                             <ExternalLink className="w-4 h-4" />
-                            Open Link
+                            Fast Download 
                           </a>
                         </div>
                         <div className="text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-600 rounded-lg p-3">
