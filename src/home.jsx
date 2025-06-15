@@ -27,6 +27,11 @@ function Home() {
     "www.tibibox.com"
   ];
 
+  const domainKeywords = [
+    "terabox", "teraboxapp", "terafileshare", "1024tera", "mirrobox", "nephobox", "freeterabox", "4funbox",
+    "momerybox", "tibibox", "teraboxlink"
+  ];
+
   const normalizeLink = (link) => {
     try {
       let normalized = link.trim().toLowerCase();
@@ -34,7 +39,6 @@ function Home() {
         normalized = "https://" + normalized;
       }
       const url = new URL(normalized);
-      // Remove www for consistent validation
       url.hostname = url.hostname.replace(/^www\./, "");
       return url.toString();
     } catch {
@@ -42,16 +46,17 @@ function Home() {
     }
   };
 
-  const isValidDomain = (link) => {
+  const isValidLink = (link) => {
     try {
       const normalizedLink = normalizeLink(link);
       const url = new URL(normalizedLink);
       const domain = url.hostname.toLowerCase();
-      const isValid = validDomains.includes(domain) || validDomains.includes(`www.${domain}`);
+      // Check if link contains any domain keyword
+      const hasKeyword = domainKeywords.some(keyword => normalizedLink.includes(keyword));
       // Check if pathname matches TeraBox share link format (/s/<id>)
       const isValidPath = /^\/s\/[a-zA-Z0-9_-]+$/.test(url.pathname);
-      console.log(`Domain: ${domain}, Valid: ${isValid}, Path Valid: ${isValidPath}`);
-      return isValid && isValidPath;
+      console.log(`Link: ${normalizedLink}, Has Keyword: ${hasKeyword}, Path Valid: ${isValidPath}, Domain: ${domain}`);
+      return hasKeyword && isValidPath;
     } catch (e) {
       console.error(`Invalid URL: ${e.message}`);
       return false;
@@ -59,15 +64,17 @@ function Home() {
   };
 
   const handleFetch = async (retryCount = 3) => {
+    console.log("handleFetch triggered with link:", link);
     if (!link.trim()) {
       setError("Please paste a TeraBox link.");
+      console.log("Error: Empty link");
       return;
     }
 
     const normalizedLink = normalizeLink(link);
-    if (!isValidDomain(normalizedLink)) {
-      console.log(`Invalid link: ${normalizedLink}`);
-      setError("Invalid TeraBox link. Please use a valid share link (e.g., https://1024terabox.com/s/<id>).");
+    if (!isValidLink(normalizedLink)) {
+      setError("Please enter a valid TeraBox link (e.g., https://1024terabox.com/s/<id>).");
+      console.log("Error: Invalid link format");
       return;
     }
 
@@ -496,7 +503,7 @@ function Home() {
                     <div>
                       <p className="text-red-700 dark:text-red-300 font-medium">Error</p>
                       <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-                      {error.includes("Invalid TeraBox link") && (
+                      {error.includes("valid TeraBox link") && (
                         <p className="text-xs text-red-600 dark:text-red-400 mt-2">
                           💡 Ensure the link is a valid TeraBox share link (e.g., https://1024terabox.com/s/<id>).
                         </p>
