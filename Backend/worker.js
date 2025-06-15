@@ -2,17 +2,27 @@
 const COOKIES = [
   'ndus=YzeXcd1peHuiK2_zig1UkhLraLgytieQ2TwpyHiy; ndut_fmt=35E53AA0B7793B84FF6E3D1F88C1A7D86BC036C1885B169D0EAA35446C0F2E65;',
   'ndus=YV2gziEteHuirP143VrwHfvzxBYjlRyws16RqEca; ndut_fmt=09299EF54861A4CE7868C0A70C12FA4C526F756846080492F91DCF9A4A56CE55;',
-  // Add premium cookies here, e.g., 'ndus=premium_cookie; ndut_fmt=premium_format;'
+  // Add premium cookies here
 ];
 
-function createHeaders(cookie) {
+const VALID_DOMAINS = [
+  "terabox.com", "www.terabox.com", "teraboxapp.com", "www.teraboxapp.com",
+  "teraboxshare.com", "www.teraboxshare.com", "1024tera.com", "www.1024tera.com",
+  "1024tera.co", "www.1024tera.co", "pan.terabox.com", "pan.1024tera.com",
+  "share.terabox.com", "share.1024tera.com", "mirrobox.com", "www.mirrobox.com",
+  "nephobox.com", "www.nephobox.com", "freeterabox.com", "www.freeterabox.com",
+  "4funbox.co", "www.4funbox.com", "terabox.app", "www.terabox.app", "terabox.fun",
+  "momerybox.com", "www.momerybox.com", "tibibox.com", "www.tibibox.com"
+];
+
+function createHeaders(cookie, host) {
   return {
     "Accept": "application/json, text/plain, */*",
     "Accept-Encoding": "gzip, deflate, br",
     "Accept-Language": "en-US,en;q=0.9",
     "Connection": "keep-alive",
     "DNT": "1",
-    "Host": "www.terabox.app",
+    "Host": host || "www.terabox.app",
     "Upgrade-Insecure-Requests": "1",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/135.0.0.0 Safari/537.36",
     "sec-ch-ua": '"Microsoft Edge";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
@@ -56,12 +66,19 @@ function findBetween(str, start, end) {
 async function getFileInfo(link, request) {
   if (!link) return { error: "Link cannot be empty." };
 
+  // Extract host from link
+  const urlObj = new URL(link);
+  const host = urlObj.host;
+  if (!VALID_DOMAINS.includes(host)) {
+    return { error: `Unsupported domain: ${host}.` };
+  }
+
   for (let i = 0; i < COOKIES.length; i++) {
     const cookie = COOKIES[i];
     try {
-      console.log(`Trying cookie ${i + 1}/${COOKIES.length}`);
-      const HEADERS = createHeaders(cookie);
-      const response = await fetch(link, { headers: HEADERS });
+      console.log(`Trying cookie ${i + 1}/${COOKIES.length} for ${host}`);
+      const HEADERS = createHeaders(cookie, host);
+      const response = await fetch(link, { headers: HEADERS, redirect: "follow" });
       if (!response.ok) {
         console.log(`Cookie ${i + 1} failed with status ${response.status}`);
         continue;
@@ -133,7 +150,7 @@ async function getFileInfo(link, request) {
     }
   }
 
-  return { error: "All cookie attempts failed. Try updating cookies or try again later." };
+  return { error: "All cookie attempts failed. Cookies may be expired or invalid." };
 }
 
 async function proxyDownload(url, fileName, request) {
@@ -153,7 +170,7 @@ async function proxyDownload(url, fileName, request) {
 
       const responseHeaders = new Headers({
         "Content-Type": res.headers.get("Content-Type") || "application/octet-stream",
-        "Content-Disposition": `inline; filename="${encodeURIComponent(fileName)}"`,
+        "Content-Disposition": `attachment; filename="${encodeURIComponent(fileName)}"`, // Changed to attachment
         "Accept-Ranges": "bytes",
         "Cache-Control": "public, max-age=3600, s-maxage=3600",
         "Access-Control-Allow-Origin": "*",
