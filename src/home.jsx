@@ -16,14 +16,15 @@ function Home() {
   const [isVideoBuffering, setIsVideoBuffering] = useState(false);
 
   const validDomains = [
-    "terabox.com", "teraboxapp.com", "teraboxshare.com", "1024tera.com", "1024tera.co",
+    "terabox.com", "teraboxapp.com", "teraboxshare.com", "1024tera.com", "1024tera.co", "1024terabox.com",
     "pan.terabox.com", "pan.1024tera.com", "share.terabox.com", "share.1024tera.com",
     "mirrobox.com", "nephobox.com", "freeterabox.com", "4funbox.co", "terabox.app",
     "terabox.fun", "momerybox.com", "tibibox.com",
     // With www prefix
     "www.terabox.com", "www.teraboxapp.com", "www.teraboxshare.com", "www.1024tera.com",
-    "www.1024tera.co", "www.mirrobox.com", "www.nephobox.com", "www.freeterabox.com",
-    "www.4funbox.com", "www.terabox.app", "www.momerybox.com", "www.tibibox.com"
+    "www.1024tera.co", "www.1024terabox.com", "www.mirrobox.com", "www.nephobox.com",
+    "www.freeterabox.com", "www.4funbox.com", "www.terabox.app", "www.momerybox.com",
+    "www.tibibox.com"
   ];
 
   const normalizeLink = (link) => {
@@ -46,8 +47,13 @@ function Home() {
       const normalizedLink = normalizeLink(link);
       const url = new URL(normalizedLink);
       const domain = url.hostname.toLowerCase();
-      return validDomains.includes(domain) || validDomains.includes(`www.${domain}`);
-    } catch {
+      const isValid = validDomains.includes(domain) || validDomains.includes(`www.${domain}`);
+      // Check if pathname matches TeraBox share link format (/s/<id>)
+      const isValidPath = /^\/s\/[a-zA-Z0-9_-]+$/.test(url.pathname);
+      console.log(`Domain: ${domain}, Valid: ${isValid}, Path Valid: ${isValidPath}`);
+      return isValid && isValidPath;
+    } catch (e) {
+      console.error(`Invalid URL: ${e.message}`);
       return false;
     }
   };
@@ -60,8 +66,8 @@ function Home() {
 
     const normalizedLink = normalizeLink(link);
     if (!isValidDomain(normalizedLink)) {
-      console.log(`Invalid domain detected: ${new URL(normalizedLink).hostname}`);
-      setError("Invalid TeraBox link. Please use a valid link from TeraBox or its affiliates.");
+      console.log(`Invalid link: ${normalizedLink}`);
+      setError("Invalid TeraBox link. Please use a valid share link (e.g., https://1024terabox.com/s/<id>).");
       return;
     }
 
@@ -239,7 +245,7 @@ function Home() {
                     <input
                       id="link"
                       type="text"
-                      placeholder="https://terabox.app/s/xxxxxx"
+                      placeholder="https://1024terabox.com/s/xxxxxx"
                       value={link}
                       onChange={(e) => setLink(e.target.value)}
                       className="w-full p-4 rounded-xl border border-zinc-200 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -492,7 +498,7 @@ function Home() {
                       <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
                       {error.includes("Invalid TeraBox link") && (
                         <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                          💡 Ensure the link is from TeraBox or its affiliates (e.g., terabox.app, mirrobox.com, nephobox.com).
+                          💡 Ensure the link is a valid TeraBox share link (e.g., https://1024terabox.com/s/<id>).
                         </p>
                       )}
                       {error.includes("Failed to fetch") && (
@@ -515,7 +521,7 @@ function Home() {
                 <ol className="space-y-2 text-sm">
                   <li className="flex gap-2">
                     <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">1</span>
-                    Copy a TeraBox share link
+                    Copy a TeraBox share link (e.g., https://1024terabox.com/s/xxxxxx)
                   </li>
                   <li className="flex gap-2">
                     <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">2</span>
