@@ -16,26 +16,39 @@ function Home() {
   const [isVideoBuffering, setIsVideoBuffering] = useState(false);
 
   const validDomains = [
-    "terabox.com", "www.terabox.com", "teraboxapp.com", "www.teraboxapp.com",
-    "teraboxshare.com", "www.teraboxshare.com", "1024tera.com", "www.1024tera.com",
-    "1024tera.co", "www.1024tera.co", "pan.terabox.com", "pan.1024tera.com",
-    "share.terabox.com", "share.1024tera.com", "mirrobox.com", "www.mirrobox.com",
-    "nephobox.com", "www.nephobox.com", "freeterabox.com", "www.freeterabox.com",
-    "4funbox.co", "www.4funbox.com", "terabox.app", "www.terabox.app", "terabox.fun",
-    "momerybox.com", "www.momerybox.com", "tibibox.com", "www.tibibox.com"
+    "terabox.com", "teraboxapp.com", "teraboxshare.com", "1024tera.com", "1024tera.co",
+    "pan.terabox.com", "pan.1024tera.com", "share.terabox.com", "share.1024tera.com",
+    "mirrobox.com", "nephobox.com", "freeterabox.com", "4funbox.co", "terabox.app",
+    "terabox.fun", "momerybox.com", "tibibox.com",
+    // With www prefix
+    "www.terabox.com", "www.teraboxapp.com", "www.teraboxshare.com", "www.1024tera.com",
+    "www.1024tera.co", "www.mirrobox.com", "www.nephobox.com", "www.freeterabox.com",
+    "www.4funbox.com", "www.terabox.app", "www.momerybox.com", "www.tibibox.com"
   ];
 
   const normalizeLink = (link) => {
     try {
-      // Remove extra spaces and normalize URL
-      let normalized = link.trim();
+      let normalized = link.trim().toLowerCase();
       if (!normalized.startsWith("http://") && !normalized.startsWith("https://")) {
         normalized = "https://" + normalized;
       }
       const url = new URL(normalized);
+      // Remove www for consistent validation
+      url.hostname = url.hostname.replace(/^www\./, "");
       return url.toString();
     } catch {
-      return link;
+      return link.trim();
+    }
+  };
+
+  const isValidDomain = (link) => {
+    try {
+      const normalizedLink = normalizeLink(link);
+      const url = new URL(normalizedLink);
+      const domain = url.hostname.toLowerCase();
+      return validDomains.includes(domain) || validDomains.includes(`www.${domain}`);
+    } catch {
+      return false;
     }
   };
 
@@ -46,10 +59,9 @@ function Home() {
     }
 
     const normalizedLink = normalizeLink(link);
-    const url = new URL(normalizedLink);
-    const domain = url.hostname.toLowerCase();
-    if (!validDomains.includes(domain)) {
-      setError(`Invalid domain: ${domain}. Please use a valid TeraBox link.`);
+    if (!isValidDomain(normalizedLink)) {
+      console.log(`Invalid domain detected: ${new URL(normalizedLink).hostname}`);
+      setError("Invalid TeraBox link. Please use a valid link from TeraBox or its affiliates.");
       return;
     }
 
@@ -478,14 +490,19 @@ function Home() {
                     <div>
                       <p className="text-red-700 dark:text-red-300 font-medium">Error</p>
                       <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-                      {error.includes("Cookies may be expired") && (
+                      {error.includes("Invalid TeraBox link") && (
                         <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                          💡 This may be due to expired cookies. Please contact support or try a premium TeraBox link.
+                          💡 Ensure the link is from TeraBox or its affiliates (e.g., terabox.app, mirrobox.com, nephobox.com).
                         </p>
                       )}
                       {error.includes("Failed to fetch") && (
                         <p className="text-xs text-red-600 dark:text-red-400 mt-2">
                           💡 Check your internet connection or try a different link.
+                        </p>
+                      )}
+                      {error.includes("Cookies may be expired") && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                          💡 This may be due to expired cookies. Please contact support or try a premium TeraBox link.
                         </p>
                       )}
                     </div>
