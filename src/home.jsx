@@ -15,22 +15,7 @@ function Home() {
   const [videoError, setVideoError] = useState(false);
   const [isVideoBuffering, setIsVideoBuffering] = useState(false);
 
-  const validDomains = [
-    "terabox.com", "teraboxapp.com", "teraboxshare.com", "1024tera.com", "1024tera.co", "1024terabox.com",
-    "pan.terabox.com", "pan.1024tera.com", "share.terabox.com", "share.1024tera.com",
-    "mirrobox.com", "nephobox.com", "freeterabox.com", "4funbox.co", "terabox.app",
-    "terabox.fun", "momerybox.com", "tibibox.com",
-    // With www prefix
-    "www.terabox.com", "www.teraboxapp.com", "www.teraboxshare.com", "www.1024tera.com",
-    "www.1024tera.co", "www.1024terabox.com", "www.mirrobox.com", "www.nephobox.com",
-    "www.freeterabox.com", "www.4funbox.com", "www.terabox.app", "www.momerybox.com",
-    "www.tibibox.com"
-  ];
-
-  const domainKeywords = [
-    "terabox", "teraboxapp", "terafileshare", "1024tera", "mirrobox", "nephobox", "freeterabox", "4funbox",
-    "momerybox", "tibibox", "teraboxlink"
-  ];
+  const linkKeywords = ["terabox", "tera", "box", "1024terabox"];
 
   const normalizeLink = (link) => {
     try {
@@ -50,12 +35,9 @@ function Home() {
     try {
       const normalizedLink = normalizeLink(link);
       const url = new URL(normalizedLink);
-      const domain = url.hostname.toLowerCase();
-      // Check if link contains any domain keyword
-      const hasKeyword = domainKeywords.some(keyword => normalizedLink.includes(keyword));
-      // Check if pathname matches TeraBox share link format (/s/<id>)
+      const hasKeyword = linkKeywords.some(keyword => normalizedLink.toLowerCase().includes(keyword.toLowerCase()));
       const isValidPath = /^\/s\/[a-zA-Z0-9_-]+$/.test(url.pathname);
-      console.log(`Link: ${normalizedLink}, Has Keyword: ${hasKeyword}, Path Valid: ${isValidPath}, Domain: ${domain}`);
+      console.log(`Link: ${normalizedLink}, Has Keyword: ${hasKeyword}, Path Valid: ${isValidPath}`);
       return hasKeyword && isValidPath;
     } catch (e) {
       console.error(`Invalid URL: ${e.message}`);
