@@ -56,6 +56,8 @@ function Home() {
         const data = await res.json();
         if (data.error) {
           setError(data.error);
+        } else if (!data.file_name || !data.download_link) {
+          setError("Invalid response from server. Missing file data.");
         } else {
           setFileData(data);
           setError("");
@@ -63,7 +65,7 @@ function Home() {
         }
       } catch (e) {
         if (attempt === retryCount) {
-          setError(`Connection failed after ${retryCount} attempts: ${e.message}`);
+          setError(`Failed to fetch file info: ${e.message}. Please try again later.`);
         }
       }
     }
@@ -77,19 +79,13 @@ function Home() {
     }
 
     try {
-      // Create a temporary anchor element to trigger download
       const link = document.createElement("a");
       link.href = url;
-      link.download = filename; // Set the filename for download
+      link.download = filename;
       link.rel = "noopener noreferrer";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
-      // Fallback to open in new tab if download doesn't start
-      setTimeout(() => {
-        window.open(url, "_blank");
-      }, 2000);
     } catch (e) {
       setError(`Failed to start download: ${e.message}. Opening link as fallback...`);
       window.open(url, "_blank");
@@ -455,9 +451,14 @@ function Home() {
                     <div>
                       <p className="text-red-700 dark:text-red-300 font-medium">Error</p>
                       <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                      {error.includes("Cookies may be expired") && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                          💡 This may be due to expired cookies. Please contact support or try a premium TeraBox link.
+                        </p>
+                      )}
                       {error.includes("Connection failed") && (
                         <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                          💡 Try clearing your browser cache or restarting your browser to improve download speed.
+                          💡 Try clearing your browser cache or restarting your browser to improve connectivity.
                         </p>
                       )}
                     </div>
