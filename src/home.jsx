@@ -25,14 +25,31 @@ function Home() {
     "momerybox.com", "www.momerybox.com", "tibibox.com", "www.tibibox.com"
   ];
 
+  const normalizeLink = (link) => {
+    try {
+      // Remove extra spaces and normalize URL
+      let normalized = link.trim();
+      if (!normalized.startsWith("http://") && !normalized.startsWith("https://")) {
+        normalized = "https://" + normalized;
+      }
+      const url = new URL(normalized);
+      return url.toString();
+    } catch {
+      return link;
+    }
+  };
+
   const handleFetch = async (retryCount = 3) => {
     if (!link.trim()) {
       setError("Please paste a TeraBox link.");
       return;
     }
 
-    if (!validDomains.some(domain => link.includes(domain))) {
-      setError("Please enter a valid TeraBox link.");
+    const normalizedLink = normalizeLink(link);
+    const url = new URL(normalizedLink);
+    const domain = url.hostname.toLowerCase();
+    if (!validDomains.includes(domain)) {
+      setError(`Invalid domain: ${domain}. Please use a valid TeraBox link.`);
       return;
     }
 
@@ -42,43 +59,52 @@ function Home() {
 
     for (let attempt = 1; attempt <= retryCount; attempt++) {
       try {
+        console.log(`Attempt ${attempt}: Sending POST to ${BACKEND_URL} with link: ${normalizedLink}`);
         const res = await fetch(BACKEND_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ link: link.trim() }),
+          body: JSON.stringify({ link: normalizedLink }),
         });
 
+        console.log(`Attempt ${attempt}: Response status: ${res.status}`);
         if (!res.ok) {
           const errorText = await res.text();
-          throw new Error(`HTTP error! status: ${res.status}, message: ${errorText}`);
+          console.error(`HTTP error: ${errorText}`);
+          throw new Error(`Server error: ${res.status} - ${errorText}`);
         }
 
         const data = await res.json();
+        console.log("Backend response:", data);
+
         if (data.error) {
           setError(data.error);
+          break;
         } else if (!data.file_name || !data.download_link) {
           setError("Invalid response from server. Missing file data.");
+          break;
         } else {
           setFileData(data);
           setError("");
           break;
         }
       } catch (e) {
+        console.error(`Attempt ${attempt} failed: ${e.message}`);
         if (attempt === retryCount) {
-          setError(`Failed to fetch file info: ${e.message}. Please try again later.`);
+          setError(`Failed to fetch file info after ${retryCount} attempts: ${e.message}. Please check the link or try again later.`);
         }
       }
     }
     setLoading(false);
   };
 
-  const handleDirectDownload = async (url, filename) => {
+  const handleDirectDownload = (url, filename) => {
     if (!url || !filename) {
       setError("Invalid download link or filename. Try 'Open Link'.");
       return;
     }
 
     try {
+      console.log(`Initiating download for URL: ${url}, Filename: ${filename}`);
       const link = document.createElement("a");
       link.href = url;
       link.download = filename;
@@ -87,6 +113,7 @@ function Home() {
       link.click();
       document.body.removeChild(link);
     } catch (e) {
+      console.error(`Download failed: ${e.message}`);
       setError(`Failed to start download: ${e.message}. Opening link as fallback...`);
       window.open(url, "_blank");
     }
@@ -94,6 +121,7 @@ function Home() {
 
   const handleOnlineWatch = async (proxyUrl, filename) => {
     try {
+      console.log(`Checking online watch URL: ${proxyUrl}`);
       const response = await fetch(proxyUrl, { method: "HEAD" });
       if (response.ok) {
         if (isVideoFile(filename)) {
@@ -133,9 +161,10 @@ function Home() {
           window.open(proxyUrl, "_blank");
         }
       } else {
-        throw new Error("URL not accessible");
+        throw new Error(`URL not accessible: ${response.status}`);
       }
     } catch (error) {
+      console.error(`Online watch failed: ${error.message}`);
       window.open(proxyUrl, "_blank");
     }
   };
@@ -149,19 +178,17 @@ function Home() {
   const handleVideoError = (e) => {
     setVideoError(true);
     setIsVideoBuffering(false);
-    setError(
-      `Video preview failed (Error: ${e.target.error?.message || "Unknown"}). Try using "Watch Online" or "Direct Download".`
-    );
+    setError(`Video preview failed: ${e.target.error?.message || "Unknown error"}. Try "Watch Online" or "Direct Download".`);
   };
 
   const isVideoFile = (filename) => {
     const videoExtensions = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".3gp"];
-    return videoExtensions.some((ext) => filename.toLowerCase().includes(ext));
+    return videoExtensions.some((ext) => filename.toLowerCase().endsWith(ext));
   };
 
   const isImageFile = (filename) => {
     const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"];
-    return imageExtensions.some((ext) => filename.toLowerCase().includes(ext));
+    return imageExtensions.some((ext) => filename.toLowerCase().endsWith(ext));
   };
 
   const reset = () => {
@@ -456,9 +483,9 @@ function Home() {
                           💡 This may be due to expired cookies. Please contact support or try a premium TeraBox link.
                         </p>
                       )}
-                      {error.includes("Connection failed") && (
+                      {error.includes("Failed to fetch") && (
                         <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                          💡 Try clearing your browser cache or restarting your browser to improve connectivity.
+                          💡 Check your internet connection or try a different link.
                         </p>
                       )}
                     </div>
